@@ -9,7 +9,7 @@ import optuna
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.study import Study
-from optuna.study._multi_objective import _dominates
+from optuna.study._multi_objective import _dominates, _dominates2
 from optuna.trial import FrozenTrial
 
 
@@ -118,10 +118,10 @@ def _fast_non_dominated_sort(
     dominates_list = defaultdict(list)
 
     for p, q in itertools.combinations(population, 2):
-        if dominates(p, q, directions):
+        if _dominates2(population, p, q, directions):
             dominates_list[p.number].append(q.number)
             dominated_count[q.number] += 1
-        elif dominates(q, p, directions):
+        elif _dominates2(population, q, p, directions):
             dominates_list[q.number].append(p.number)
             dominated_count[p.number] += 1
 
