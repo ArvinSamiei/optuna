@@ -6,6 +6,7 @@ import optuna
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+import numpy as np
 
 
 def _get_pareto_front_trials_2d(
@@ -74,6 +75,61 @@ def _dominates(
 ) -> bool:
     values0 = trial0.values
     values1 = trial1.values
+
+    assert values0 is not None
+    assert values1 is not None
+
+    if len(values0) != len(values1):
+        raise ValueError("Trials with different numbers of objectives cannot be compared.")
+
+    if len(values0) != len(directions):
+        raise ValueError(
+            "The number of the values and the number of the objectives are mismatched."
+        )
+
+    if trial0.state != TrialState.COMPLETE:
+        return False
+
+    if trial1.state != TrialState.COMPLETE:
+        return True
+
+    normalized_values0 = [_normalize_value(v, d) for v, d in zip(values0, directions)]
+    normalized_values1 = [_normalize_value(v, d) for v, d in zip(values1, directions)]
+
+    if normalized_values0 == normalized_values1:
+        return False
+
+    return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
+
+
+def _dominates2(population,
+    trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
+) -> bool:
+    values0 = trial0.values
+    pop_without_0 = [x for x in population if x._trial_id != trial0._trial_id]
+    matrix0 = np.array([list(obj.params.values()) for obj in pop_without_0])
+    values1 = trial1.values
+    pop_without_1 = [x for x in population if x._trial_id != trial1._trial_id]
+    matrix1 = np.array([list(obj.params.values()) for obj in pop_without_1])
+    matrix = np.array([list(obj.params.values()) for obj in population])
+
+    transpose = matrix.T
+    product = np.dot(transpose, matrix)
+    (sign, logabsdet) = np.linalg.slogdet(product)
+    det = sign * np.exp(logabsdet)
+
+    transpose = matrix0.T
+    product = np.dot(transpose, matrix0)
+    (sign, logabsdet) = np.linalg.slogdet(product)
+    det0 = sign * np.exp(logabsdet)
+
+    transpose = matrix1.T
+    product = np.dot(transpose, matrix1)
+    (sign, logabsdet) = np.linalg.slogdet(product)
+    det1 = sign * np.exp(logabsdet)
+
+    values0[2] = abs(det) - abs(det0)
+    values1[2] = abs(det) - abs(det1)
 
     assert values0 is not None
     assert values1 is not None
