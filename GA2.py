@@ -1,18 +1,13 @@
 import ctypes as ct
 import itertools
-import math
 import random
+from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 import cupy as cp
-from collections import Counter, defaultdict
-
-from optuna import create_study, visualization
-from optuna.samplers import NSGAIISampler
-from numba import njit
-
 import torch
+from numba import njit
 
 
 # Reconstruct the structure from the .h file
