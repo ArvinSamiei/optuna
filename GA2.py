@@ -6,7 +6,6 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 import cupy as cp
-import torch
 from numba import njit
 
 
@@ -63,7 +62,6 @@ class Function:
         self.create_objects = mylib.create_objects
 
 
-print(torch.cuda.is_available())
 population_size = 100
 
 fitness_values = CircularBuffer(population_size)
