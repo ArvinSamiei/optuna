@@ -39,7 +39,7 @@ def _get_pareto_front_trials_2d(
 
 
 def _get_pareto_front_trials_nd(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+        trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
 ) -> List[FrozenTrial]:
     pareto_front = []
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
@@ -113,20 +113,21 @@ def _dominates2(population,
     matrix1 = np.array([list(obj.params.values()) for obj in pop_without_1])
     matrix = np.array([list(obj.params.values()) for obj in population])
 
-    transpose = matrix.T
-    product = np.dot(transpose, matrix)
-    (sign, logabsdet) = np.linalg.slogdet(product)
-    det = sign * np.exp(logabsdet)
+    scaled0 = matrix0 * 35
+    scaled1 = matrix1 * 35
+    scaled = matrix * 35
 
-    transpose = matrix0.T
-    product = np.dot(transpose, matrix0)
-    (sign, logabsdet) = np.linalg.slogdet(product)
-    det0 = sign * np.exp(logabsdet)
+    transpose = scaled.T
+    product = np.dot(transpose, scaled)
+    det = np.linalg.det(product)
 
-    transpose = matrix1.T
-    product = np.dot(transpose, matrix1)
-    (sign, logabsdet) = np.linalg.slogdet(product)
-    det1 = sign * np.exp(logabsdet)
+    transpose = scaled0.T
+    product = np.dot(transpose, scaled0)
+    det0 = np.linalg.det(product)
+
+    transpose = scaled1.T
+    product = np.dot(transpose, scaled1)
+    det1 = np.linalg.det(product)
 
     values0[2] = abs(det) - abs(det0)
     values1[2] = abs(det) - abs(det1)
@@ -154,7 +155,7 @@ def _dominates2(population,
     if normalized_values0 == normalized_values1:
         return False
 
-    return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
+    return normalized_values0[2] <= normalized_values1[2]
 
 
 def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:

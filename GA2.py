@@ -1,19 +1,16 @@
 import ctypes as ct
+import datetime
 import itertools
+import os
 import random
 from collections import defaultdict
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 
-import cupy as cp
-from numba import njit
+import numpy as cp
 
-
-# Reconstruct the structure from the .h file
-
-
-# Load the compiled library
-# mylib = npct.load_library('./libuntitled1.so', './libuntitled1.so')
+from optuna import create_study
+from optuna.samplers import NSGAIISampler
 
 
 class CircularBuffer:
@@ -48,73 +45,37 @@ class Function:
         mylib = ct.CDLL(
             './libuntitled1.so')
 
-        self.iteration = mylib.while_iteration
+        self.iteration = mylib.start_collision_detection
         # Define the return type of the C function
         self.iteration.restype = ct.c_long
 
         # Define arguments of the C function
         self.iteration.argtypes = [
             ct.c_int32,
-            ct.POINTER(ct.c_double),
             ct.POINTER(ct.c_double)
         ]
 
-        self.create_objects = mylib.create_objects
+
+def get_objective(iter_func):
+    def objective(trial):
+        inputs = []
+        for i in range(6):
+            sug_f = trial.suggest_float(f"inputs{i}", 0, 0.01)
+            inputs.append(sug_f)
+        for i in range(6, 15):
+            sug_f = trial.suggest_float(f"inputs{i}", 0, 3)
+            inputs.append(sug_f)
+        arr = (ct.c_double * 15)(*inputs)
+
+        v0 = iter_func(3, arr)
+        v1 = abs(100000 - v0)
+        v2 = 0
+        return v1, v2
+
+    return objective
 
 
-population_size = 100
-
-fitness_values = CircularBuffer(population_size)
-
-function = Function()
-
-function.create_objects()
-
-
-def objective(trial):
-    inputs = [[] for _ in range(2)]
-    inputs_scaled = [[] for _ in range(2)]
-    constraints_list = []
-    for i in range(2):
-        for j in range(24):
-            sug_f = trial.suggest_float(f"inputs{i}{j}", 0, 0.01)
-            inputs_scaled[i].append(sug_f * 10000)
-            inputs[i].append(sug_f)
-            constraints_list.append((inputs[i][j] >= 0) and (inputs[i][j] <= 1))
-    arr1 = (ct.c_double * 24)(*(inputs[0]))
-    arr2 = (ct.c_double * 24)(*(inputs[1]))
-    trial.set_user_attr("constraint", constraints_list)
-
-    v0 = function.iteration(3, arr1, arr2)
-    v1 = abs(100000 - v0)
-    v2 = 0
-    return v0, v1, v2
-
-
-def calc_determinant():
-    fitness_list = fitness_values.get_buffer()
-    if len(fitness_list) == 0:
-        return 0
-    matrix = cp.array(fitness_list)
-    transpose = matrix.T
-    product = cp.dot(matrix, transpose)
-    cp.linalg.det(product)
-
-
-def constraints(trial):
-    return trial.user_attrs["constraint"]
-
-
-# sampler = NSGAIISampler(population_size=population_size, constraints_func=constraints)
-# study = create_study(directions=["maximize", "maximize", "maximize"], sampler=sampler)
-# study.optimize(objective, n_trials=1000)
-#
-# fig = visualization.plot_pareto_front(study)
-# fig.show()
-#
-# print(study.best_trials)
-
-total_inputs = CircularBuffer(population_size)
+total_inputs = CircularBuffer(100)
 counter = 0
 
 
@@ -127,19 +88,21 @@ class Trial:
         self.inputs = inputs
 
 
+def scale_actions(lst):
+    for i in range(6):
+        lst[i] *= 30
+
+
 def _dominates2(population,
                 trial0, trial1
                 ) -> bool:
     values0 = trial0.values
     pop_without_0 = [x for x in population if x.trial_id != trial0.trial_id]
-    matrix0 = cp.array([list(obj.inputs) for obj in pop_without_0], dtype=cp.float32)
+    matrix0 = cp.array([scale_actions(list(obj.inputs)) for obj in pop_without_0], dtype=cp.float32)
     values1 = trial1.values
     pop_without_1 = [x for x in population if x.trial_id != trial1.trial_id]
-    matrix1 = cp.array([list(obj.inputs) for obj in pop_without_1], dtype=cp.float32)
-    matrix = cp.array([list(obj.inputs) for obj in population], dtype=cp.float32)
-
-    griddim = 10, 20
-    blockdim = 3, 4
+    matrix1 = cp.array([scale_actions(list(obj.inputs)) for obj in pop_without_1], dtype=cp.float32)
+    matrix = cp.array([scale_actions(list(obj.inputs)) for obj in population], dtype=cp.float32)
 
     det = calc_det(matrix)
 
@@ -159,16 +122,10 @@ def _dominates2(population,
     return all(v0 <= v1 for v0, v1 in zip(values0, values1))
 
 
-@njit
 def calc_det(matrix):
     transpose = matrix.T
     product = cp.dot(transpose, matrix)
-    (sign, logabsdet) = cp.linalg.slogdet(product)
-    det = sign * cp.exp(logabsdet)
-    return det
-
-
-res = None
+    return cp.linalg.det(product)
 
 
 def check_dominance(population, pair):
@@ -183,7 +140,6 @@ def check_dominance(population, pair):
 def fast_non_dominated_sort(
         population
 ):
-    global res
     dominated_count = defaultdict(int)
     dominates_list = defaultdict(list)
 
@@ -202,6 +158,7 @@ def fast_non_dominated_sort(
             dominated_count[loser_id] += 1
 
     population_per_rank = []
+    print('line 208')
     while population:
         non_dominated_population = []
         i = 0
@@ -222,7 +179,7 @@ def fast_non_dominated_sort(
 
         assert non_dominated_population
         population_per_rank.append(non_dominated_population)
-
+    print('line 299')
     res = []
     ret_val = []
     for lst in population_per_rank:
@@ -234,43 +191,66 @@ def fast_non_dominated_sort(
                 break
         if len(ret_val) >= 100:
             break
+    print('line 241')
     return ret_val
 
 
-trials = []
-
-
-def random_search():
-    global trials
+def random_search(iter_func):
+    trials = []
     for k in range(2000):
         new_input = []
-        scaled_inputs = []
-        for i in range(2):
-            new_input.append([])
-            for j in range(24):
-                sug_f = random.uniform(0, 0.01)
+        inputs = []
+        for i in range(6):
+            rand_num = random.uniform(0, 0.01)
+            inputs.append(rand_num)
+        for i in range(6, 15):
+            rand_num = random.uniform(0, 3)
+            inputs.append(rand_num)
+        arr = (ct.c_double * 15)(*inputs)
 
-                new_input[i].append(sug_f)
-                scaled_inputs.append(sug_f * 1000)
-
-        arr1 = (ct.c_double * 24)(*(new_input[0]))
-        arr2 = (ct.c_double * 24)(*(new_input[1]))
-
-        v0 = function.iteration(3, arr1, arr2)
+        v0 = iter_func(3, arr)
+        # print(v0)
         v1 = abs(100000 - v0)
-        trials.append(Trial(v0, v1, scaled_inputs))
+        trials.append(Trial(v0, v1, inputs))
         if k != 0 and k % 100 == 0:
+            # print(k)
             trials = fast_non_dominated_sort(trials)
 
     return fast_non_dominated_sort(trials)
 
 
-for j in range(10):
-    with open(f'result{j}.txt', 'a') as file:
-        for i in random_search():
+def exec_random_search(j):
+    population_size = 100
+    function = Function()
+    fitness_values = CircularBuffer(population_size)
+
+    # function.create_objects()
+    result = random_search(function.iteration)
+    with open(f'result_random{j}.txt', 'a') as file:
+        for i in result:
             for inp in i.inputs:
                 file.write(str(inp / 1000) + ' ')
             file.write('\n')
             for val in i.values:
                 file.write(str(val) + ' ')
+            file.write('\n')
+
+
+# for i in range(10):
+#     exec_random_search(i)
+
+
+directory = f'NSGA_res_{datetime.datetime.now()}'
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
+for j in range(10):
+    sampler = NSGAIISampler(population_size=200)
+    study = create_study(directions=["maximize", "maximize"], sampler=sampler)
+    study.optimize(get_objective(Function().iteration), n_trials=10000)
+    with open(f'{directory}/result_NSGA{j}.txt', 'a') as file:
+        for i in study.best_trials:
+            file.write(str(list(i.params.values())))
+            file.write('\n')
+            file.write(str(i.values))
             file.write('\n')
