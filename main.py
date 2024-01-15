@@ -1,9 +1,14 @@
-from utils import algorithm
+import os
+from datetime import datetime
 
-
+from GA2 import get_objective
+from optuna import create_study
+from optuna.samplers import NSGAIISampler
+from random_alg import random_search
+from utils import algorithm, Algorithm, Function
 
 directory = ''
-now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 if algorithm == Algorithm.RANDOM:
     directory = f'Random_res_{now}'
 elif algorithm == Algorithm.GA:

@@ -1,12 +1,4 @@
 import ctypes as ct
-import datetime
-import os
-
-import numpy as cp
-
-from GA import Function
-from optuna import create_study
-from optuna.samplers import NSGAIISampler
 
 
 def get_objective(iter_func):
@@ -27,10 +19,3 @@ def get_objective(iter_func):
         return v1, v2
 
     return objective
-
-
-counter = 0
-
-
-
-

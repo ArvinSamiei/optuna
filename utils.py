@@ -1,6 +1,8 @@
 import ctypes as ct
 from enum import Enum
 
+import numpy
+
 
 class Function:
     def __init__(self):
@@ -32,8 +34,8 @@ class Algorithm(Enum):
 
 def calc_det(matrix):
     transpose = matrix.T
-    product = cp.dot(transpose, matrix)
-    return cp.linalg.det(product)
+    product = numpy.dot(transpose, matrix)
+    return numpy.linalg.det(product)
 
 
 algorithm = Algorithm.RANDOM
