@@ -1,5 +1,7 @@
 import ctypes as ct
 
+from utils import run_iter_func
+
 
 def get_objective(iter_func):
     def objective(trial):
@@ -10,10 +12,8 @@ def get_objective(iter_func):
         for i in range(6, 15):
             sug_f = trial.suggest_float(f"inputs{i}", 0, 3)
             inputs.append(sug_f)
-        arr = (ct.c_double * 15)(*inputs)
 
-        iter_func(3, arr)
-        v0 = iter_func(3, arr)
+        v0 = run_iter_func(inputs)
         v1 = abs(100000 - v0)
         v2 = 0
         return v1, v2

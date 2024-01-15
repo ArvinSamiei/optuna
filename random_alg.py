@@ -8,21 +8,9 @@ from functools import partial
 import numpy as cp
 
 from optuna.study._multi_objective import dominates_facade
-from utils import fitness_combination, population_size
+from utils import fitness_combination, population_size, run_iter_func
 
-
-class Function:
-    def __init__(self):
-        mylib = ct.CDLL(
-            './libuntitled1.so')
-
-        self.iteration = mylib.start_collision_detection
-        self.iteration.restype = ct.c_long
-
-        self.iteration.argtypes = [
-            ct.c_int32,
-            ct.POINTER(ct.c_double)
-        ]
+counter = 0
 
 
 class Trial:
@@ -153,9 +141,8 @@ def random_search(iter_func):
         for _ in range(6, 15):
             rand_num = random.uniform(0, 3)
             inputs.append(rand_num)
-        arr = (ct.c_double * 15)(*inputs)
-        iter_func(3, arr)
-        v0 = iter_func(3, arr)
+
+        v0 = run_iter_func(inputs)
         v1 = abs(100000 - v0)
         trials.append(Trial(v0, v1, inputs))
         if k != 0 and k % population_size == 0:
