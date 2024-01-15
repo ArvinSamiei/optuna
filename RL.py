@@ -23,7 +23,10 @@ class Function:
             ct.POINTER(ct.c_double)
         ]
 
+
 r_history = []
+
+
 class CollisionAvoidanceEnv(gym.Env):
     """
     Custom Environment for collision avoidance with high-dimensional state and action spaces.
@@ -62,6 +65,9 @@ class CollisionAvoidanceEnv(gym.Env):
 
         r_history.append(reward)
 
+        for i in range(6):
+            self.state[i] = action[i] + self.state[i]
+
         return self.state, reward, False, {}
 
     def reset(self):
@@ -80,7 +86,8 @@ class CollisionAvoidanceEnv(gym.Env):
     def calculate_reward(self, action):
         # Define how to calculate the reward
         # In your case, it's related to execution time for collision checking
-        arr = (ct.c_double * 15)(*action)
+        inputs = action + self.state
+        arr = (ct.c_double * 15)(*inputs)
         execution_time = self.function.iteration(3, arr)
         return execution_time
 
@@ -108,7 +115,7 @@ model.save("ppo_cartpole")
 model = PPO.load("ppo_cartpole")
 obs = env.reset()
 
-for i in range(100000000000):
+for i in range(100000):
     action, _states = model.predict(obs, deterministic=True)
     obs, rewards, dones, info = env.step(action)
     env.render()

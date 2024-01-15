@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -6,11 +7,10 @@ import optuna
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-import numpy as np
 
 
 def _get_pareto_front_trials_2d(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+        trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
 ) -> List[FrozenTrial]:
     trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
 
@@ -59,7 +59,7 @@ def _get_pareto_front_trials_nd(
 
 
 def _get_pareto_front_trials_by_trials(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+        trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
 ) -> List[FrozenTrial]:
     if len(directions) == 2:
         return _get_pareto_front_trials_2d(trials, directions)  # Log-linear in number of trials.
@@ -70,12 +70,15 @@ def _get_pareto_front_trials(study: "optuna.study.Study") -> List[FrozenTrial]:
     return _get_pareto_front_trials_by_trials(study.trials, study.directions)
 
 
-def _dominates(
-    trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
-) -> bool:
-    values0 = trial0.values
-    values1 = trial1.values
+value_str = 'value'
+state_str = 'state'
 
+
+def _dominates_value_state(
+        value_state0, value_state1, directions: Sequence[StudyDirection]
+) -> bool:
+    values0 = value_state0[value_str]
+    values1 = value_state1[value_str]
     assert values0 is not None
     assert values1 is not None
 
@@ -102,60 +105,57 @@ def _dominates(
     return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
 
 
-def _dominates2(population,
-    trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
+def _dominates(
+        trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
 ) -> bool:
     values0 = trial0.values
-    pop_without_0 = [x for x in population if x._trial_id != trial0._trial_id]
-    matrix0 = np.array([list(obj.params.values()) for obj in pop_without_0])
     values1 = trial1.values
-    pop_without_1 = [x for x in population if x._trial_id != trial1._trial_id]
-    matrix1 = np.array([list(obj.params.values()) for obj in pop_without_1])
-    matrix = np.array([list(obj.params.values()) for obj in population])
-
-    scaled0 = matrix0 * 35
-    scaled1 = matrix1 * 35
-    scaled = matrix * 35
-
-    transpose = scaled.T
-    product = np.dot(transpose, scaled)
-    det = np.linalg.det(product)
-
-    transpose = scaled0.T
-    product = np.dot(transpose, scaled0)
-    det0 = np.linalg.det(product)
-
-    transpose = scaled1.T
-    product = np.dot(transpose, scaled1)
-    det1 = np.linalg.det(product)
-
-    values0[2] = abs(det) - abs(det0)
-    values1[2] = abs(det) - abs(det1)
 
     assert values0 is not None
     assert values1 is not None
 
-    if len(values0) != len(values1):
-        raise ValueError("Trials with different numbers of objectives cannot be compared.")
+    value_state0 = {value_str: values0, state_str: trial0.state}
+    value_state1 = {value_str: values1, state_str: trial1.state}
+    return _dominates_value_state(value_state0, value_state1, directions)
 
-    if len(values0) != len(directions):
-        raise ValueError(
-            "The number of the values and the number of the objectives are mismatched."
-        )
 
-    if trial0.state != TrialState.COMPLETE:
-        return False
+def scale_motions(lst):
+    for i in range(6):
+        lst[i] = lst[i] * 30
+    return lst
 
-    if trial1.state != TrialState.COMPLETE:
-        return True
 
-    normalized_values0 = [_normalize_value(v, d) for v, d in zip(values0, directions)]
-    normalized_values1 = [_normalize_value(v, d) for v, d in zip(values1, directions)]
+def _dominates_with_diversity(population,
+                              trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection], values_size
+                              ) -> bool:
+    values0 = trial0.values
+    pop_without_0 = [x for x in population if x.trial_id != trial0.trial_id]
+    matrix0 = cp.array([scale_motions(list(obj.inputs)) for obj in pop_without_0], dtype=cp.float32)
 
-    if normalized_values0 == normalized_values1:
-        return False
+    values1 = trial1.values
+    pop_without_1 = [x for x in population if x.trial_id != trial1.trial_id]
+    matrix1 = cp.array([scale_motions(list(obj.inputs)) for obj in pop_without_1], dtype=cp.float32)
+    matrix = cp.array([scale_motions(list(obj.inputs)) for obj in population], dtype=cp.float32)
 
-    return normalized_values0[2] <= normalized_values1[2]
+    transpose = matrix.T
+    product = np.dot(transpose, matrix)
+    det = np.linalg.det(product)
+
+    transpose = matrix0.T
+    product = np.dot(transpose, matrix0)
+    det0 = np.linalg.det(product)
+
+    transpose = matrix1.T
+    product = np.dot(transpose, matrix1)
+    det1 = np.linalg.det(product)
+
+    values0[values_size - 1] = abs(det) - abs(det0)
+    values1[values_size - 1] = abs(det) - abs(det1)
+
+    value_state0 = {value_str: values0, state_str: trial0.state}
+    value_state1 = {value_str: values1, state_str: trial1.state}
+
+    _dominates_value_state(value_state0, value_state1, directions)
 
 
 def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:
@@ -166,3 +166,14 @@ def _normalize_value(value: Optional[float], direction: StudyDirection) -> float
         value = -value
 
     return value
+
+
+def dominates_facade(population,
+                     trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection], case
+                     ) -> bool:
+    if case == FitnessCombination.EXEC or case == FitnessCombination.jit or case == FitnessCombination.DIV:
+        return _dominates(trial0, trial1, directions)
+    elif case == FitnessCombination.EXEC_DIV or case == FitnessCombination.JIT_DIV:
+        return _dominates_with_diversity(population, trial0, trial1, directions, 2)
+    elif case == FitnessCombination.EXEC_JIT_DIV:
+        return _dominates_with_diversity(population, trial0, trial1, directions, 3)
