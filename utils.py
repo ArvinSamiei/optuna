@@ -1,6 +1,7 @@
 import ctypes as ct
 import multiprocessing
 from enum import Enum
+from multiprocessing import Process
 
 import numpy
 
@@ -41,9 +42,6 @@ def calc_det(matrix):
     return numpy.linalg.det(product)
 
 
-function = Function()
-
-
 class Consumer(multiprocessing.Process):
 
     def __init__(self, task_queue, result_queue):
@@ -65,24 +63,50 @@ class Task(object):
 
     def __call__(self):
         arr = (ct.c_double * 15)(*self.inputs)
+        function = Function()
         function.iteration(3, arr)
         v0 = function.iteration(3, arr)
         return v0
 
 
-def run_iter_func(inputs):
-    tasks = multiprocessing.JoinableQueue()
-    results = multiprocessing.Queue()
+def execute_c_code(inputs, results_q):
+    arr = (ct.c_double * 15)(*inputs)
+    function = Function()
+    function.iteration(3, arr)
+    v0 = function.iteration(3, arr)
+    results_q.put(v0)
 
-    consumer = Consumer(tasks, results)
-    consumer.start()
-    tasks.put(Task(inputs))
-    tasks.join()
+
+def run_iter_func(inputs):
+    results = multiprocessing.Queue()
+    p = Process(target=execute_c_code, args=(inputs, results))
+    p.start()
+    p.join()
 
     result = results.get()
+    # arr = (ct.c_double * 15)(*inputs)
+    # function = Function()
+    # function.iteration(3, arr)
+    # result = function.iteration(3, arr)
     return result
 
 
+def return_objectives(v0, v1, v2):
+    if fitness_combination == FitnessCombination.EXEC:
+        return [v0]
+    elif fitness_combination == FitnessCombination.DIV:
+        return [v2]
+    elif fitness_combination == FitnessCombination.JIT:
+        return [v1]
+    elif fitness_combination == FitnessCombination.EXEC_DIV:
+        return [v0, v2]
+    elif fitness_combination == FitnessCombination.JIT_DIV:
+        return [v1, v2]
+    elif fitness_combination == FitnessCombination.EXEC_JIT_DIV:
+        return [v0, v1, v2]
+
+
 algorithm = Algorithm.RANDOM
-fitness_combination = FitnessCombination.EXEC
-population_size = 200
+fitness_combination = FitnessCombination.EXEC_DIV
+population_size = 10
+n_trials = 20

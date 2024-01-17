@@ -1,6 +1,6 @@
 import ctypes as ct
 
-from utils import run_iter_func
+from utils import run_iter_func, fitness_combination, FitnessCombination, return_objectives
 
 
 def get_objective(iter_func):
@@ -16,6 +16,7 @@ def get_objective(iter_func):
         v0 = run_iter_func(inputs)
         v1 = abs(100000 - v0)
         v2 = 0
-        return v1, v2
+
+        return return_objectives(v0, v1, v2)
 
     return objective

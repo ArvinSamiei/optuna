@@ -9,8 +9,9 @@ import optuna
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.study import Study
-from optuna.study._multi_objective import _dominates, _dominates_with_diversity
+from optuna.study._multi_objective import _dominates, _dominates_with_diversity, dominates_facade
 from optuna.trial import FrozenTrial
+from utils import fitness_combination
 
 
 class NSGAIIElitePopulationSelectionStrategy:
@@ -118,10 +119,10 @@ def _fast_non_dominated_sort(
     dominates_list = defaultdict(list)
 
     for p, q in itertools.combinations(population, 2):
-        if dominates_facade(population, p, q, directions):
+        if dominates_facade(population, p, q, directions, fitness_combination):
             dominates_list[p.number].append(q.number)
             dominated_count[q.number] += 1
-        elif dominates_facade(population, q, p, directions):
+        elif dominates_facade(population, q, p, directions, fitness_combination):
             dominates_list[q.number].append(p.number)
             dominated_count[p.number] += 1
 

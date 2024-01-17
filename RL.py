@@ -5,7 +5,7 @@ import gym
 from gym import spaces
 import numpy as np
 import ctypes as ct
-
+from utils import run_iter_func
 
 class Function:
     def __init__(self):
@@ -86,9 +86,15 @@ class CollisionAvoidanceEnv(gym.Env):
     def calculate_reward(self, action):
         # Define how to calculate the reward
         # In your case, it's related to execution time for collision checking
-        inputs = action + self.state
+        inputs = [0] * 15
+        for i in range(6):
+            inputs[i] = action[i]
+
+        for i in range(6, 15):
+            inputs[i - 6] = self.state[i - 6]
+
         arr = (ct.c_double * 15)(*inputs)
-        execution_time = self.function.iteration(3, arr)
+        execution_time = run_iter_func(inputs)
         return execution_time
 
 
@@ -115,7 +121,7 @@ model.save("ppo_cartpole")
 model = PPO.load("ppo_cartpole")
 obs = env.reset()
 
-for i in range(100000):
+for i in range(10000):
     action, _states = model.predict(obs, deterministic=True)
     obs, rewards, dones, info = env.step(action)
     env.render()

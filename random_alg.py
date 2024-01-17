@@ -8,7 +8,7 @@ from functools import partial
 import numpy as cp
 
 from optuna.study._multi_objective import dominates_facade
-from utils import fitness_combination, population_size, run_iter_func
+from utils import fitness_combination, population_size, run_iter_func, n_trials, return_objectives
 
 counter = 0
 
@@ -18,7 +18,7 @@ class Trial:
         global counter
         self.trial_id = counter
         counter += 1
-        self.values = [v0, v1, 0]
+        self.values = return_objectives(v0, v1, 0)
         self.inputs = inputs
 
 
@@ -66,9 +66,9 @@ def calc_det(matrix):
 
 def check_dominance(population, pair):
     p, q = pair
-    if dominates_facade(population, p, q, fitness_combination):
+    if dominates_facade(population, p, q, None, fitness_combination):
         return ('p_dominates', p.trial_id, q.trial_id)
-    elif dominates_facade(population, q, p, fitness_combination):
+    elif dominates_facade(population, q, p, None, fitness_combination):
         return ('q_dominates', q.trial_id, p.trial_id)
     return ('none', None, None)
 
@@ -123,17 +123,17 @@ def fast_non_dominated_sort(
         for el in lst:
             ret_val.append(el)
             res[-1].append(el)
-            if len(ret_val) >= 100:
+            if len(ret_val) >= population_size:
                 break
-        if len(ret_val) >= 100:
+        if len(ret_val) >= population_size:
             break
     print('line 241')
     return ret_val
 
 
-def random_search(iter_func):
+def random_search():
     trials = []
-    for k in range(2000):
+    for k in range(n_trials):
         inputs = []
         for _ in range(6):
             rand_num = random.uniform(0, 0.01)

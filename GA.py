@@ -1,8 +1,6 @@
 import ctypes as ct
-import math
 
 import numpy as np
-from collections import Counter
 
 from optuna import create_study, visualization
 from optuna.samplers import NSGAIISampler
