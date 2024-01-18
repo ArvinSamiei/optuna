@@ -8,7 +8,7 @@ from functools import partial
 import numpy as cp
 
 from optuna.study._multi_objective import dominates_facade
-from utils import fitness_combination, population_size, run_iter_func, n_trials, return_objectives
+from utils import fitness_combination, population_size, run_iter_func, n_trials, return_objectives, calc_det
 
 counter = 0
 
@@ -56,12 +56,6 @@ def _dominates2(population,
         raise ValueError("Trials with different numbers of objectives cannot be compared.")
 
     return values0[1] <= values1[1] and values0[2] <= values1[2]
-
-
-def calc_det(matrix):
-    transpose = matrix.T
-    product = cp.dot(transpose, matrix)
-    return cp.linalg.det(product)
 
 
 def check_dominance(population, pair):
