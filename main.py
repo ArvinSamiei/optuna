@@ -5,7 +5,7 @@ from GA2 import get_objective
 from optuna import create_study
 from optuna.samplers import NSGAIISampler
 from random_alg import random_search
-from utils import algorithm, Algorithm, Function, population_size, n_trials
+from utils import algorithm, Algorithm, Function, population_size, n_trials, get_num_objectives
 
 if __name__ == "__main__":
     directory = ''
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     elif algorithm == Algorithm.GA:
         for i in range(10):
             sampler = NSGAIISampler(population_size=population_size)
-            study = create_study(directions=None, sampler=sampler)
+            study = create_study(directions=['maximize'] * get_num_objectives(), sampler=sampler)
             study.optimize(get_objective(Function().iteration), n_trials=n_trials)
             with open(f'{directory}/NSGA_res{i}.txt', 'a') as file:
                 for t in study.best_trials:

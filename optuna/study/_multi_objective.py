@@ -7,7 +7,7 @@ import optuna
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from utils import FitnessCombination
+from utils import FitnessCombination, get_num_objectives
 
 
 def _get_pareto_front_trials_2d(
@@ -131,16 +131,17 @@ def scale_motions(lst):
 
 
 def _dominates_with_diversity(population,
-                              trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection], values_size
+                              trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection],
+                              values_size
                               ) -> bool:
     values0 = trial0.values
-    pop_without_0 = [x for x in population if x.trial_id != trial0.trial_id]
-    matrix0 = np.array([scale_motions(list(obj.inputs)) for obj in pop_without_0], dtype=np.float32)
+    pop_without_0 = [x for x in population if x._trial_id != trial0._trial_id]
+    matrix0 = np.array([scale_motions(list(obj.params.values())) for obj in pop_without_0], dtype=np.float32)
 
     values1 = trial1.values
-    pop_without_1 = [x for x in population if x.trial_id != trial1.trial_id]
-    matrix1 = np.array([scale_motions(list(obj.inputs)) for obj in pop_without_1], dtype=np.float32)
-    matrix = np.array([scale_motions(list(obj.inputs)) for obj in population], dtype=np.float32)
+    pop_without_1 = [x for x in population if x._trial_id != trial1._trial_id]
+    matrix1 = np.array([scale_motions(list(obj.params.values())) for obj in pop_without_1], dtype=np.float32)
+    matrix = np.array([scale_motions(list(obj.params.values())) for obj in population], dtype=np.float32)
 
     transpose = matrix.T
     product = np.dot(transpose, matrix)
@@ -180,13 +181,7 @@ def _normalize_value(value: Optional[float], direction: StudyDirection) -> float
 def dominates_facade(population,
                      trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection], case
                      ) -> bool:
-    num_objectives = 0
-    if case == FitnessCombination.EXEC or case == FitnessCombination.JIT or case == FitnessCombination.DIV:
-        num_objectives = 1
-    elif case == FitnessCombination.EXEC_DIV or case == FitnessCombination.JIT_DIV:
-        num_objectives = 2
-    elif case == FitnessCombination.EXEC_JIT_DIV:
-        num_objectives = 3
+    num_objectives = get_num_objectives()
 
     if directions is None:
         directions = ["maximize"] * num_objectives

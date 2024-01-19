@@ -1,9 +1,8 @@
 import ctypes as ct
 import multiprocessing
+import numpy
 from enum import Enum
 from multiprocessing import Process
-
-import numpy
 
 
 class Function:
@@ -106,7 +105,16 @@ def return_objectives(v0, v1, v2):
         return [v0, v1, v2]
 
 
-algorithm = Algorithm.RANDOM
+def get_num_objectives():
+    if fitness_combination == FitnessCombination.EXEC or fitness_combination == FitnessCombination.JIT or fitness_combination == FitnessCombination.DIV:
+        return 1
+    elif fitness_combination == FitnessCombination.EXEC_DIV or fitness_combination == FitnessCombination.JIT_DIV:
+        return 2
+    elif fitness_combination == FitnessCombination.EXEC_JIT_DIV:
+        return 3
+
+
+algorithm = Algorithm.GA
 fitness_combination = FitnessCombination.EXEC_DIV
 population_size = 10
 n_trials = 20
