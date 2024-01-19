@@ -38,7 +38,8 @@ class Algorithm(Enum):
 def calc_det(matrix):
     transpose = matrix.T
     product = numpy.dot(transpose, matrix)
-    return numpy.linalg.det(product)
+    sign, Ldet = np.linalg.slogdet(product)
+    return Ldet
 
 
 class Consumer(multiprocessing.Process):
