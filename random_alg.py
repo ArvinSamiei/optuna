@@ -16,10 +16,13 @@ counter = 0
 class Trial:
     def __init__(self, v0, v1, inputs):
         global counter
-        self.trial_id = counter
+        self._trial_id = counter
         counter += 1
         self.values = return_objectives(v0, v1, 0)
         self.inputs = inputs
+        self.params = {}
+        for i in range(len(inputs)):
+            self.params[str(i)] = inputs[i]
 
 
 def scale_actions(lst):
@@ -32,11 +35,11 @@ def _dominates2(population,
                 trial0, trial1
                 ) -> bool:
     values0 = trial0.values
-    pop_without_0 = [x for x in population if x.trial_id != trial0.trial_id]
+    pop_without_0 = [x for x in population if x._trial_id != trial0._trial_id]
     matrix0 = cp.array([scale_actions(list(obj.inputs)) for obj in pop_without_0], dtype=cp.float32)
 
     values1 = trial1.values
-    pop_without_1 = [x for x in population if x.trial_id != trial1.trial_id]
+    pop_without_1 = [x for x in population if x._trial_id != trial1._trial_id]
     matrix1 = cp.array([scale_actions(list(obj.inputs)) for obj in pop_without_1], dtype=cp.float32)
     matrix = cp.array([scale_actions(list(obj.inputs)) for obj in population], dtype=cp.float32)
 
@@ -61,9 +64,9 @@ def _dominates2(population,
 def check_dominance(population, pair):
     p, q = pair
     if dominates_facade(population, p, q, None, fitness_combination):
-        return ('p_dominates', p.trial_id, q.trial_id)
+        return ('p_dominates', p._trial_id, q._trial_id)
     elif dominates_facade(population, q, p, None, fitness_combination):
-        return ('q_dominates', q.trial_id, p.trial_id)
+        return ('q_dominates', q._trial_id, p._trial_id)
     return ('none', None, None)
 
 
@@ -73,10 +76,12 @@ def fast_non_dominated_sort(
     dominated_count = defaultdict(int)
     dominates_list = defaultdict(list)
 
-    pairs = list(itertools.combinations(population, 2))
-    partial_check_dominance = partial(check_dominance, population)
-    with ProcessPoolExecutor() as executor:
-        results = executor.map(partial_check_dominance, pairs)
+    results = []
+    for p, q in itertools.combinations(population, 2):
+        if dominates_facade(population, p, q, None, fitness_combination):
+            results.append(('p_dominates', p._trial_id, q._trial_id))
+        elif dominates_facade(population, q, p, None, fitness_combination):
+            results.append(('q_dominates', p._trial_id, q._trial_id))
 
     for result in results:
         status, winner_id, loser_id = result
@@ -93,7 +98,7 @@ def fast_non_dominated_sort(
         non_dominated_population = []
         i = 0
         while i < len(population):
-            if dominated_count[population[i].trial_id] == 0:
+            if dominated_count[population[i]._trial_id] == 0:
                 individual = population[i]
                 if i == len(population) - 1:
                     population.pop()
@@ -104,7 +109,7 @@ def fast_non_dominated_sort(
                 i += 1
 
         for x in non_dominated_population:
-            for y in dominates_list[x.trial_id]:
+            for y in dominates_list[x._trial_id]:
                 dominated_count[y] -= 1
 
         assert non_dominated_population

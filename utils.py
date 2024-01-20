@@ -1,6 +1,6 @@
 import ctypes as ct
 import multiprocessing
-import numpy
+import numpy as np
 from enum import Enum
 from multiprocessing import Process
 
@@ -37,7 +37,7 @@ class Algorithm(Enum):
 
 def calc_det(matrix):
     transpose = matrix.T
-    product = numpy.dot(transpose, matrix)
+    product = np.dot(transpose, matrix)
     sign, Ldet = np.linalg.slogdet(product)
     return Ldet
 
@@ -115,7 +115,7 @@ def get_num_objectives():
         return 3
 
 
-algorithm = Algorithm.GA
+algorithm = Algorithm.RANDOM
 fitness_combination = FitnessCombination.EXEC_DIV
-population_size = 10
-n_trials = 20
+population_size = 100
+n_trials = 20000

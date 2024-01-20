@@ -7,7 +7,7 @@ import optuna
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from utils import FitnessCombination, get_num_objectives
+from utils import FitnessCombination, get_num_objectives, calc_det
 
 
 def _get_pareto_front_trials_2d(
@@ -143,17 +143,11 @@ def _dominates_with_diversity(population,
     matrix1 = np.array([scale_motions(list(obj.params.values())) for obj in pop_without_1], dtype=np.float32)
     matrix = np.array([scale_motions(list(obj.params.values())) for obj in population], dtype=np.float32)
 
-    transpose = matrix.T
-    product = np.dot(transpose, matrix)
-    det = np.linalg.det(product)
+    det = calc_det(matrix)
 
-    transpose = matrix0.T
-    product = np.dot(transpose, matrix0)
-    det0 = np.linalg.det(product)
+    det0 = calc_det(matrix0)
 
-    transpose = matrix1.T
-    product = np.dot(transpose, matrix1)
-    det1 = np.linalg.det(product)
+    det1 = calc_det(matrix1)
 
     values0[values_size - 1] = abs(det) - abs(det0)
     values1[values_size - 1] = abs(det) - abs(det1)
