@@ -1,6 +1,7 @@
 import ctypes as ct
 import multiprocessing
 import numpy as np
+import pandas as pd
 from enum import Enum
 from multiprocessing import Process
 
@@ -72,9 +73,15 @@ class Task(object):
 def execute_c_code(inputs, results_q):
     arr = (ct.c_double * 15)(*inputs)
     function = Function()
-    function.iteration(3, arr)
-    v0 = function.iteration(3, arr)
-    results_q.put(v0)
+    exec_times = []
+    for i in range(10):
+        exec_time = function.iteration(3,arr)
+        exec_times.append(exec_time)
+    p75, p25 = np.percentile(exec_times, [75, 25])
+    np_arr_times = np.array(exec_times)
+    np_arr_times = np_arr_times[np_arr_times < p75]
+    np_arr_times = np_arr_times[np_arr_times > p25]
+    results_q.put(np.mean(np_arr_times))
 
 
 def run_iter_func(inputs):
@@ -118,4 +125,4 @@ def get_num_objectives():
 algorithm = Algorithm.RANDOM
 fitness_combination = FitnessCombination.EXEC_DIV
 population_size = 100
-n_trials = 20000
+n_trials = 2000
