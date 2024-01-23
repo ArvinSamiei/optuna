@@ -1,7 +1,6 @@
 import ctypes as ct
 import multiprocessing
 import numpy as np
-import pandas as pd
 from enum import Enum
 from multiprocessing import Process
 
@@ -124,5 +123,5 @@ def get_num_objectives():
 
 algorithm = Algorithm.RANDOM
 fitness_combination = FitnessCombination.EXEC_DIV
-population_size = 100
-n_trials = 2000
+population_size = 200
+n_trials = 20000
