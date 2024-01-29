@@ -4,6 +4,7 @@ from typing import Optional
 from typing import Sequence
 
 import optuna
+import utils
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -125,9 +126,7 @@ def _dominates(
 
 
 def scale_motions(lst):
-    for i in range(6):
-        lst[i] = lst[i] * 30
-    return lst
+    return [x * 30 for x in lst[:6]] + lst[6:]
 
 
 def _dominates_with_diversity(population,
@@ -171,11 +170,13 @@ def _normalize_value(value: Optional[float], direction: StudyDirection) -> float
 
     return value
 
-
 def dominates_facade(population,
                      trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection], case
                      ) -> bool:
     num_objectives = get_num_objectives()
+
+    if len(population) > 0:
+        utils.PopulationStore().set_population(population)
 
     if directions is None:
         directions = ["maximize"] * num_objectives

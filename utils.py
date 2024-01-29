@@ -74,7 +74,7 @@ def execute_c_code(inputs, results_q):
     function = Function()
     exec_times = []
     for i in range(10):
-        exec_time = function.iteration(3,arr)
+        exec_time = function.iteration(3, arr)
         exec_times.append(exec_time)
     p75, p25 = np.percentile(exec_times, [75, 25])
     np_arr_times = np.array(exec_times)
@@ -123,5 +123,34 @@ def get_num_objectives():
 
 algorithm = Algorithm.RANDOM
 fitness_combination = FitnessCombination.EXEC_DIV
-population_size = 200
-n_trials = 20000
+population_size = 10
+n_trials = 20
+
+
+class SingletonMeta(type):
+    """
+    The Singleton class can be implemented in different ways in Python. Some
+    possible methods include: base class, decorator, metaclass. We will use the
+    metaclass because it is best suited for this purpose.
+    """
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """
+        Possible changes to the value of the `__init__` argument do not affect
+        the returned instance.
+        """
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class PopulationStore(metaclass=SingletonMeta):
+    def set_population(self, population):
+        if len(population) > 0:
+            self.population = population.copy()
+
+    def get_population(self):
+        return self.population
