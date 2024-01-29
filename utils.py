@@ -123,8 +123,8 @@ def get_num_objectives():
 
 algorithm = Algorithm.RANDOM
 fitness_combination = FitnessCombination.EXEC_DIV
-population_size = 10
-n_trials = 20
+population_size = 200
+n_trials = 20000
 
 
 class SingletonMeta(type):
