@@ -6,6 +6,7 @@ from collections.abc import Callable
 from collections.abc import Sequence
 
 import optuna
+import utils
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.study import Study
@@ -52,7 +53,7 @@ class NSGAIIElitePopulationSelectionStrategy:
                 _crowding_distance_sort(individuals)
                 elite_population.extend(individuals[:n])
                 break
-
+        utils.PopulationStore().set_population(elite_population)
         return elite_population
 
 
@@ -147,5 +148,4 @@ def _fast_non_dominated_sort(
 
         assert non_dominated_population
         population_per_rank.append(non_dominated_population)
-
     return population_per_rank

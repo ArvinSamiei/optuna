@@ -121,7 +121,7 @@ def get_num_objectives():
         return 3
 
 
-algorithm = Algorithm.RANDOM
+algorithm = Algorithm.GA
 fitness_combination = FitnessCombination.EXEC_DIV
 population_size = 200
 n_trials = 20000

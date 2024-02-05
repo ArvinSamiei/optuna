@@ -175,9 +175,6 @@ def dominates_facade(population,
                      ) -> bool:
     num_objectives = get_num_objectives()
 
-    if len(population) > 0:
-        utils.PopulationStore().set_population(population)
-
     if directions is None:
         directions = ["maximize"] * num_objectives
 

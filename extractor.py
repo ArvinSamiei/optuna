@@ -4,12 +4,12 @@ from statistics import mean, stdev
 
 def NSGA_exec(i):
     exec_times = []
-    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec/2/NSGA_res{i}.txt', 'r') as file:
+    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec/4/NSGA_res{i}.txt', 'r') as file:
         lines = file.readlines()
         counter = 1
-        for line in lines:
-            if counter % 2 == 0:
-                values = ast.literal_eval(line.strip())
+        for j in range(3, len(lines)):
+            if ',' not in lines[j]:
+                values = ast.literal_eval(lines[j].strip())
                 exec_times.append(values[0])
             counter += 1
 
@@ -18,9 +18,14 @@ def NSGA_exec(i):
     exec_times.sort(reverse=True)
 
     print(exec_times)
-    print(f'Max for NSGA is: {max(exec_times)}')
-    print(f'Max for random algorithm is: {max(rand_exec_times)}')
-    return max(exec_times), max(rand_exec_times)
+    print(f'Max for NSGA is: {max(exec_times):,}')
+    print(f'Average for NSGA is: {mean(exec_times):,}')
+    print(f'Max for random algorithm is: {max(rand_exec_times):,}')
+    print(f'Average for random algorithm is: {mean(rand_exec_times):,}')
+
+    print('---------------------------------------------')
+    print('\n\n\n\n\n')
+    return mean(exec_times), mean(rand_exec_times)
 
 
 def extract_rand_exec_times(i):
@@ -38,11 +43,15 @@ def extract_rand_exec_times(i):
 def NSGA_exec_div(i):
     exec_times = []
     diversities = []
-    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec_div/1/NSGA_res{i}.txt', 'r') as file:
+    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec_div/2/NSGA_res{i}.txt', 'r') as file:
         lines = file.readlines()
+        for j in range(0, len(lines)):
+            if 'population' in lines[j]:
+                break
         counter = 1
-        for line in lines:
-            if counter % 2 == 0:
+        for k in range(j + 1, len(lines)):
+            line = lines[k]
+            if line.count(',') == 1:
                 values = ast.literal_eval(line.strip())
                 exec_times.append(values[0])
                 diversities.append(values[1])
@@ -70,13 +79,13 @@ def NSGA_exec_div(i):
 
     print(f'average execution ')
 
-    return exec_times, diversities
+    return mean(exec_times), mean(diversities)
 
 
 a = []
 b = []
 for i in range(0, 10):
-    values = NSGA_exec(i)
+    values = NSGA_exec_div(i)
     a.append(values[0])
     b.append(values[1])
 print(mean(a))
