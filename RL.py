@@ -1,11 +1,20 @@
-import gym
 from stable_baselines3 import PPO
-from stable_baselines3.common.env_util import make_vec_env
 import gym
 from gym import spaces
 import numpy as np
 import ctypes as ct
 from utils import run_iter_func
+
+step_size = 0.001
+
+movements = [[step_size, 0, 0],
+             [0, step_size, 0],
+             [0, 0, step_size],
+             [step_size, step_size, 0],
+             [step_size, 0, step_size],
+             [step_size, step_size, 0],
+             [step_size, step_size, step_size]]
+
 
 class Function:
     def __init__(self):
@@ -39,7 +48,7 @@ class CollisionAvoidanceEnv(gym.Env):
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(9,), dtype=np.float32)
 
         # Each action consists of 48 real numbers (motions for these objects)
-        self.action_space = spaces.Box(low=0, high=0.01, shape=(6,), dtype=np.float32)
+        self.action_space = spaces.MultiDiscrete([7, 7])
 
         # Initialize state
         self.state = np.zeros(9, dtype=np.float32)
@@ -53,9 +62,8 @@ class CollisionAvoidanceEnv(gym.Env):
         # Here you would need to define how an action modifies your environment's state
 
         # Check for collision and calculate reward
-        reward = self.calculate_reward(action)
-
-        position = []
+        movement = movements[action[0]] + movements[action[1]]
+        reward = self.calculate_reward(movement)
 
         # Check if the episode is done (you'll need to define the criteria)
         if reward > self.max_reward:
@@ -66,7 +74,7 @@ class CollisionAvoidanceEnv(gym.Env):
         r_history.append(reward)
 
         for i in range(6):
-            self.state[i] = action[i] + self.state[i]
+            self.state[i] = movement[i] + self.state[i]
 
         return self.state, reward, False, {}
 
@@ -83,17 +91,16 @@ class CollisionAvoidanceEnv(gym.Env):
         # Perform any necessary cleanup
         pass
 
-    def calculate_reward(self, action):
+    def calculate_reward(self, movement):
         # Define how to calculate the reward
         # In your case, it's related to execution time for collision checking
         inputs = [0] * 15
         for i in range(6):
-            inputs[i] = action[i]
+            inputs[i] = movement[i]
 
         for i in range(6, 15):
             inputs[i - 6] = self.state[i - 6]
 
-        arr = (ct.c_double * 15)(*inputs)
         execution_time = run_iter_func(inputs)
         return execution_time
 
