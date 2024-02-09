@@ -25,7 +25,7 @@ def NSGA_exec(i):
 
     print('---------------------------------------------')
     print('\n\n\n\n\n')
-    return mean(exec_times), mean(rand_exec_times)
+    return exec_times
 
 
 def extract_rand_exec_times(i):
@@ -81,14 +81,14 @@ def NSGA_exec_div(i):
 
     return mean(exec_times), mean(diversities)
 
-
-a = []
-b = []
-for i in range(0, 10):
-    values = NSGA_exec_div(i)
-    a.append(values[0])
-    b.append(values[1])
-print(mean(a))
-print(stdev(a))
-print(mean(b))
-print(stdev(b))
+#
+# a = []
+# b = []
+# for i in range(0, 10):
+#     values = NSGA_exec_div(i)
+#     a.append(values[0])
+#     b.append(values[1])
+# print(mean(a))
+# print(stdev(a))
+# print(mean(b))
+# print(stdev(b))

@@ -1,7 +1,43 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from extractor import NSGA_exec_div
+from extractor import NSGA_exec_div, extract_rand_exec_times, NSGA_exec
+
+
+def remove_outliers(data):
+    Q1 = np.percentile(data, 25)
+    Q3 = np.percentile(data, 75)
+    IQR = Q3 - Q1
+
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+
+    # Remove outliers
+    filtered_data = [x for x in data if x >= lower_bound and x <= upper_bound]
+
+    return filtered_data
+
+
+def make_boxplot_exec():
+    data = []
+    for i in range(10):
+        data.append(extract_rand_exec_times(i))
+
+    for i in range(10):
+        data.append(NSGA_exec(i))
+
+    bp = plt.boxplot(data, patch_artist=True, showfliers=False)
+
+    for i in range(10):
+        box = bp['boxes'][i]
+        box.set_facecolor("blue")
+
+    for i in range(10, 20):
+        box = bp['boxes'][i]
+        box.set_facecolor("red")
+
+    plt.savefig('fitness_exec.pdf')
+    plt.clf()
 
 
 def save_box_plot():
@@ -26,4 +62,4 @@ def draw_plot(IQR, Q1, Q3, file_name, i, values):
     plt.clf()
 
 
-save_box_plot()
+make_boxplot_exec()
