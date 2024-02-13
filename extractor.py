@@ -43,7 +43,7 @@ def extract_rand_exec_times(i):
 def NSGA_exec_div(i):
     exec_times = []
     diversities = []
-    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec_div/2/NSGA_res{i}.txt', 'r') as file:
+    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec_div/3/NSGA_res{i}.txt', 'r') as file:
         lines = file.readlines()
         for j in range(0, len(lines)):
             if 'population' in lines[j]:
@@ -56,14 +56,8 @@ def NSGA_exec_div(i):
                 exec_times.append(values[0])
                 diversities.append(values[1])
             counter += 1
-    with open(f'/home/arvins/Desktop/results_wo_outliers/random_exec/2/random_res{i}.txt', 'r') as file:
-        lines = file.readlines()
-        counter = 1
-        rand_exec_times = []
-        for line in lines:
-            if counter % 2 == 0:
-                rand_exec_times.append(float(line.strip()))
-            counter += 1
+
+    rand_exec_times = extract_rand_exec_times(i)
 
     min_size = min(len(exec_times), len(rand_exec_times))
 
@@ -79,7 +73,7 @@ def NSGA_exec_div(i):
 
     print(f'average execution ')
 
-    return mean(exec_times), mean(diversities)
+    return exec_times, diversities
 
 #
 # a = []
