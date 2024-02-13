@@ -102,7 +102,7 @@ class CollisionAvoidanceEnv(gym.Env):
             inputs[i - 6] = self.state[i - 6]
 
         execution_time = run_iter_func(inputs)
-        return execution_time
+        return execution_time / 3000000
 
 
 from gym.envs.registration import register
