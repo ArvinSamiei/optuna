@@ -19,24 +19,42 @@ def remove_outliers(data):
 
 
 def make_boxplot_exec():
-    data = []
-    for i in range(10):
-        data.append(extract_rand_exec_times(i))
+    ga_data = []
+    rand_data = []
 
     for i in range(10):
-        data.append(NSGA_exec(i))
-
-    bp = plt.boxplot(data, patch_artist=True, showfliers=False)
+        rand_data += extract_rand_exec_times(i)
 
     for i in range(10):
-        box = bp['boxes'][i]
-        box.set_facecolor("blue")
+        ga_data += NSGA_exec(i)
 
-    for i in range(10, 20):
-        box = bp['boxes'][i]
-        box.set_facecolor("red")
+    data = [rand_data, ga_data]
+    draw_plots(data, 'fitness_exec.pdf')
 
-    plt.savefig('fitness_exec.pdf')
+
+def make_boxplot_exec_div():
+    ga_data = []
+    rand_data = []
+    for i in range(10):
+        rand_data += extract_rand_exec_times(i)
+
+    for i in range(10):
+        ga_data += NSGA_exec_div(i)[0]
+
+    data = [rand_data, ga_data]
+    draw_plots(data, 'fitness_exec_div.pdf')
+
+
+def draw_plots(data, file_name):
+    bp = plt.boxplot(data, patch_artist=True, showfliers=True)
+
+    box = bp['boxes'][0]
+    box.set_facecolor("blue")
+
+    box = bp['boxes'][1]
+    box.set_facecolor("red")
+
+    plt.savefig(file_name)
     plt.clf()
 
 
