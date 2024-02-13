@@ -75,6 +75,9 @@ def execute_c_code(inputs, results_q):
     exec_times = []
     for i in range(10):
         exec_time = function.iteration(3, arr)
+        if exec_time == -1:
+            results_q.put(-1)
+            return
         exec_times.append(exec_time)
     p75, p25 = np.percentile(exec_times, [75, 25])
     np_arr_times = np.array(exec_times)
@@ -124,8 +127,7 @@ def get_num_objectives():
 algorithm = Algorithm.GA
 fitness_combination = FitnessCombination.EXEC_DIV
 population_size = 200
-n_trials = 20000
-
+n_trials = 200000
 
 class SingletonMeta(type):
     """
