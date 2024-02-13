@@ -10,7 +10,7 @@ import utils
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.study import Study
-from optuna.study._multi_objective import _dominates, _dominates_with_diversity, dominates_facade
+from optuna.study._multi_objective import _dominates, dominates_facade
 from optuna.trial import FrozenTrial
 from utils import fitness_combination
 
@@ -53,6 +53,13 @@ class NSGAIIElitePopulationSelectionStrategy:
                 _crowding_distance_sort(individuals)
                 elite_population.extend(individuals[:n])
                 break
+
+
+        max_exec = max(t.values[0] for t in study.best_trials)
+        utils.PopulationStore().set_max_exec(max_exec)
+        if utils.algorithm == utils.Algorithm.GA and fitness_combination == utils.FitnessCombination.EXEC_DIV:
+            max_div= max(t.values[1] for t in study.best_trials)
+            utils.PopulationStore().set_max_div(max_div)
         utils.PopulationStore().set_population(elite_population)
         return elite_population
 

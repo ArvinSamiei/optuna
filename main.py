@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 
+import matplotlib.pyplot as plt
+
 import utils
 from GA2 import get_objective
 from optuna import create_study
@@ -50,3 +52,20 @@ if __name__ == "__main__":
                     file.write('\n')
                     file.write(str(t.values))
                     file.write('\n')
+
+            y = utils.PopulationStore().max_exec
+            x = list(range(0, len(y)))
+            plt.plot(x, y)
+            plt.title('exec times')
+            plt.savefig(f'{directory}/exec_plot{i}.pdf')
+            plt.clf()
+            utils.PopulationStore().max_exec = []
+
+            if utils.fitness_combination == utils.FitnessCombination.EXEC_DIV:
+                y = utils.PopulationStore().max_div
+                x = list(range(0, len(y)))
+                plt.plot(x, y)
+                plt.title('diversities')
+                plt.savefig(f'{directory}/div_plot{i}.pdf')
+                plt.clf()
+                utils.PopulationStore().max_div = []

@@ -126,7 +126,7 @@ def get_num_objectives():
 
 algorithm = Algorithm.GA
 fitness_combination = FitnessCombination.EXEC_DIV
-population_size = 200
+population_size = 50
 n_trials = 200000
 
 class SingletonMeta(type):
@@ -150,9 +150,19 @@ class SingletonMeta(type):
 
 
 class PopulationStore(metaclass=SingletonMeta):
+    def __init__(self):
+        self.population = []
+        self.max_exec = []
+        self.max_div = []
     def set_population(self, population):
         if len(population) > 0:
             self.population = population.copy()
+
+    def set_max_exec(self, max_exec):
+        self.max_exec.append(max_exec)
+
+    def set_max_div(self, max_div):
+        self.max_div.append(max_div)
 
     def get_population(self):
         return self.population
