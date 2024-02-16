@@ -57,6 +57,19 @@ class CollisionAvoidanceEnv(gym.Env):
         self.max_reward_state = 0
         self.max_reward_action = 0
 
+        # For early Stop
+        self.window_size = 100  # Size of the window for the moving average
+        self.improvement_threshold = 0.001  # Threshold for considering improvement significant
+        self.patience = 10  # How many checks without significant improvement to wait before stopping
+
+        # Initialize variables for tracking the moving average and stopping criteria
+        self.moving_averages = []
+        self.no_improvement_count = 0
+        self.total_rewards = 0
+        self.num_steps = 0
+        self.total_steps = 0
+        self.window_size = 10
+
     def step(self, action):
         # Apply action
         # Here you would need to define how an action modifies your environment's state
@@ -65,22 +78,49 @@ class CollisionAvoidanceEnv(gym.Env):
         movement = movements[action[0]] + movements[action[1]]
         reward = self.calculate_reward(movement)
 
+        self.total_rewards += reward
+        self.num_steps += 1
+        self.total_steps += 1
+
+        if self.num_steps >= self.window_size:
+            moving_avg = self.total_rewards / self.num_steps
+            if len(self.moving_averages) >= 1:
+                improvement = moving_avg - self.moving_averages[-1]
+                if improvement < self.improvement_threshold:
+                    self.no_improvement_count += 1
+                r_history.append(moving_avg)
+            self.moving_averages.append(moving_avg)
+            self.no_improvement_count = 0
+            self.total_rewards = 0
+            self.num_steps = 0
+
+        done = False
+
+        if self.no_improvement_count >= self.patience:
+            done = True
+            print(f"Total steps were: {self.total_steps}")
+            self.no_improvement_count = 0
+            self.total_rewards = 0
+            self.num_steps = 0
+            self.total_steps = 0
+
         # Check if the episode is done (you'll need to define the criteria)
         if reward > self.max_reward:
             self.max_reward = reward
             self.max_reward_state = self.state.copy()  # Make a copy of the state
             self.max_reward_action = action.copy()  # Make a copy of the action
 
-        r_history.append(reward)
+
 
         for i in range(6):
             self.state[i] = movement[i] + self.state[i]
 
-        return self.state, reward, False, {}
+        return self.state, reward, done, {}
 
     def reset(self):
         # Reset the environment state
-        self.state = np.zeros(9, dtype=np.float32)
+        self.moving_averages = []
+        self.reset_state()
         return self.state
 
     def render(self, mode='human'):
@@ -103,6 +143,16 @@ class CollisionAvoidanceEnv(gym.Env):
 
         execution_time = run_iter_func(inputs)
         return execution_time / 3000000
+
+    def reset_state(self):
+        count = 0
+        while True:
+            self.state = np.random.rand(9) * 2
+            reward = self.calculate_reward([0] * 6)
+            if reward != -1:
+                print(f'count for resetting state was: {count}')
+                return
+            count += 1
 
 
 from gym.envs.registration import register
@@ -143,4 +193,4 @@ import matplotlib.pyplot as plt
 x = list(range(len(r_history)))
 y = r_history
 plt.plot(x, y)
-plt.savefig("graph.png")
+plt.savefig("graph.pdf")
