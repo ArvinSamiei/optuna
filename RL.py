@@ -1,8 +1,11 @@
-from stable_baselines3 import PPO
-import gym
-from gym import spaces
-import numpy as np
 import ctypes as ct
+
+import gym
+import matplotlib.pyplot as plt
+import numpy as np
+from gym import spaces
+from stable_baselines3 import PPO
+
 from utils import run_iter_func
 
 step_size = 0.001
@@ -35,6 +38,8 @@ class Function:
 
 r_history = []
 
+r_history
+
 
 class CollisionAvoidanceEnv(gym.Env):
     """
@@ -51,7 +56,7 @@ class CollisionAvoidanceEnv(gym.Env):
         self.action_space = spaces.MultiDiscrete([7, 7])
 
         # Initialize state
-        self.state = np.zeros(9, dtype=np.float32)
+        self.reset_state()
         self.function = Function()
         self.max_reward = 0
         self.max_reward_state = 0
@@ -68,7 +73,6 @@ class CollisionAvoidanceEnv(gym.Env):
         self.total_rewards = 0
         self.num_steps = 0
         self.total_steps = 0
-        self.window_size = 10
 
     def step(self, action):
         # Apply action
@@ -110,8 +114,6 @@ class CollisionAvoidanceEnv(gym.Env):
             self.max_reward_state = self.state.copy()  # Make a copy of the state
             self.max_reward_action = action.copy()  # Make a copy of the action
 
-
-
         for i in range(6):
             self.state[i] = movement[i] + self.state[i]
 
@@ -149,7 +151,7 @@ class CollisionAvoidanceEnv(gym.Env):
     def reset_state(self):
         count = 0
         while True:
-            self.state = np.random.rand(9) * 2
+            self.state = self.observation_space.sample()
             reward = self.calculate_reward([0] * 6)
             if reward != -1:
                 print(f'count for resetting state was: {count}')
@@ -167,20 +169,31 @@ register(
 env = gym.make('CollisionAvoidanceEnv-v0')
 
 # Initialize the agent
-model = PPO("MlpPolicy", env, verbose=1)
+try:
+    model = PPO.load("ppo_cartpole")
+    print("Saved model doesn't exist. Creating new model.")
+except FileNotFoundError:
+    model = PPO("MlpPolicy", env, verbose=1)
 
 # Train the agent
-total_timesteps = 25000
+total_timesteps = 250000
 model.learn(total_timesteps=total_timesteps)
 
 # Save the model
 model.save("ppo_cartpole")
 
+x = list(range(len(r_history)))
+y = r_history
+plt.plot(x, y)
+plt.savefig("learn_graph.pdf")
+
+r_history = []
+
 # Load the trained model
 model = PPO.load("ppo_cartpole")
 obs = env.reset()
 
-for i in range(10000):
+for i in range(100000):
     action, _states = model.predict(obs, deterministic=True)
     obs, rewards, dones, info = env.step(action)
     env.render()
@@ -190,9 +203,7 @@ print("State leading to max reward:", env.max_reward_state)
 print("Action leading to max reward:", env.max_reward_action)
 env.close()
 
-import matplotlib.pyplot as plt
-
 x = list(range(len(r_history)))
 y = r_history
 plt.plot(x, y)
-plt.savefig("graph.pdf")
+plt.savefig("test_graph.pdf")
