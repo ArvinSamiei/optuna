@@ -75,7 +75,7 @@ def execute_c_code(inputs, results_q):
     exec_times = []
     for i in range(10):
         exec_time = function.iteration(3, arr)
-        if exec_time == -1:
+        if exec_time <= 0:
             results_q.put(-1)
             return
         exec_times.append(exec_time)
