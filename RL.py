@@ -144,7 +144,7 @@ class CollisionAvoidanceEnv(gym.Env):
             inputs[i - 6] = self.state[i - 6]
 
         execution_time = run_iter_func(inputs)
-        if execution_time == -1:
+        if execution_time == -1 or execution_time == 0:
             return execution_time
         return execution_time / 3000000
 
