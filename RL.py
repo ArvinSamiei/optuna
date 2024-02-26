@@ -82,6 +82,9 @@ class CollisionAvoidanceEnv(gym.Env):
         movement = movements[action[0]] + movements[action[1]]
         reward = self.calculate_reward(movement)
 
+        if reward <= 0:
+            return self.state, reward, True, {}
+
         self.total_rewards += reward
         self.num_steps += 1
         self.total_steps += 1
