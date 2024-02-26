@@ -28,8 +28,7 @@ if __name__ == "__main__":
             result = random_search()
             with open(f'{directory}/random_res{i}.txt', 'a') as file:
                 for res in result:
-                    for inp in res.inputs:
-                        file.write(str(inp / 1000) + ' ')
+                    file.write(str(res.inputs()))
                     file.write('\n')
                     file.write(str(res.exec_time))
                     file.write('\n')
