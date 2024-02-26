@@ -38,8 +38,6 @@ class Function:
 
 r_history = []
 
-r_history
-
 
 class CollisionAvoidanceEnv(gym.Env):
     """
