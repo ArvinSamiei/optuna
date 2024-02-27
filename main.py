@@ -37,7 +37,7 @@ if __name__ == "__main__":
         for i in range(10):
             sampler = NSGAIISampler(population_size=population_size)
             study = create_study(directions=['maximize'] * get_num_objectives(), sampler=sampler)
-            study.optimize(get_objective(Function().iteration), n_trials=n_trials)
+            study.optimize(get_objective(), n_trials=n_trials)
             with open(f'{directory}/NSGA_res{i}.txt', 'a') as file:
                 for t in study.best_trials:
                     file.write(str(list(t.params.values())))

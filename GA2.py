@@ -3,7 +3,7 @@ import ctypes as ct
 from utils import run_iter_func, fitness_combination, FitnessCombination, return_objectives
 
 
-def get_objective(iter_func):
+def get_objective():
     def objective(trial):
         inputs = []
         for i in range(6):

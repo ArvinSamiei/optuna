@@ -126,8 +126,9 @@ def get_num_objectives():
 
 algorithm = Algorithm.GA
 fitness_combination = FitnessCombination.EXEC_DIV
-population_size = 50
-n_trials = 200000
+population_size = 100
+n_trials = 10000
+GA_rand_ratio = 0.2
 
 class SingletonMeta(type):
     """
@@ -166,3 +167,18 @@ class PopulationStore(metaclass=SingletonMeta):
 
     def get_population(self):
         return self.population
+
+
+def calc_diversity(population, trial_id):
+    matrix = np.array([scale_motions(list(obj.params.values())) for obj in population], dtype=np.float32)
+
+    trial_popped = [x for x in population if x._trial_id != trial_id]
+    matrix_wo_trial = np.array([scale_motions(list(obj.params.values())) for obj in trial_popped], dtype=np.float32)
+
+    det = calc_det(matrix)
+    det_wo_trial = calc_det(matrix_wo_trial)
+    return abs(det) - abs(det_wo_trial)
+
+
+def scale_motions(lst):
+    return [x * 30 for x in lst[:6]] + lst[6:]

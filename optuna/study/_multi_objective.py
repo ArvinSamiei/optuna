@@ -1,14 +1,12 @@
-import numpy as np
 from typing import List
 from typing import Optional
 from typing import Sequence
 
 import optuna
-import utils
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from utils import FitnessCombination, get_num_objectives, calc_det
+from utils import get_num_objectives, calc_diversity
 
 
 def _get_pareto_front_trials_2d(
@@ -125,31 +123,17 @@ def _dominates(
     return _dominates_value_state(value_state0, value_state1, directions)
 
 
-def scale_motions(lst):
-    return [x * 30 for x in lst[:6]] + lst[6:]
-
-
 def _dominates_with_diversity(population,
                               trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection],
                               values_size
                               ) -> bool:
+    div0 = calc_diversity(population, trial0._trial_id)
+    div1 = calc_diversity(population, trial1._trial_id)
+
     values0 = trial0.values
-    pop_without_0 = [x for x in population if x._trial_id != trial0._trial_id]
-    matrix0 = np.array([scale_motions(list(obj.params.values())) for obj in pop_without_0], dtype=np.float32)
-
     values1 = trial1.values
-    pop_without_1 = [x for x in population if x._trial_id != trial1._trial_id]
-    matrix1 = np.array([scale_motions(list(obj.params.values())) for obj in pop_without_1], dtype=np.float32)
-    matrix = np.array([scale_motions(list(obj.params.values())) for obj in population], dtype=np.float32)
-
-    det = calc_det(matrix)
-
-    det0 = calc_det(matrix0)
-
-    det1 = calc_det(matrix1)
-
-    values0[values_size - 1] = abs(det) - abs(det0)
-    values1[values_size - 1] = abs(det) - abs(det1)
+    values0[values_size - 1] = div0
+    values1[values_size - 1] = div1
 
     try:
         value_state0 = {value_str: values0, state_str: trial0.state}
@@ -169,6 +153,7 @@ def _normalize_value(value: Optional[float], direction: StudyDirection) -> float
         value = -value
 
     return value
+
 
 def dominates_facade(population,
                      trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection], case

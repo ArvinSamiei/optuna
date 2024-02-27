@@ -4,9 +4,11 @@ import itertools
 from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
+import random
 
 import optuna
 import utils
+from GA2 import get_objective
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.study import Study
@@ -58,9 +60,35 @@ class NSGAIIElitePopulationSelectionStrategy:
         max_exec = max(t.values[0] for t in study.best_trials)
         utils.PopulationStore().set_max_exec(max_exec)
         if utils.algorithm == utils.Algorithm.GA and fitness_combination == utils.FitnessCombination.EXEC_DIV:
-            max_div= max(t.values[1] for t in study.best_trials)
+            max_div = max(t.values[1] for t in study.best_trials)
             utils.PopulationStore().set_max_div(max_div)
         utils.PopulationStore().set_population(elite_population)
+
+        # add random trials
+        selection_size = int(self._population_size * (1 - utils.GA_rand_ratio))
+        random_size = self._population_size - selection_size
+        random_indices = random.sample(range(len(elite_population)), random_size)
+
+        for i in range(random_size):
+            index = random_indices[i]
+            trial = elite_population[index]
+
+            inputs = {}
+            key = 'inputs'
+            for j in range(6):
+                rand_num = random.uniform(0, 0.01)
+                inputs[f'{key}{j}'] = rand_num
+            for j in range(6, 15):
+                rand_num = random.uniform(0, 3)
+                inputs[f'{key}{j}'] = rand_num
+
+            exec_time = utils.run_iter_func(list(inputs.values()))
+            trial.params = inputs
+            if utils.algorithm == utils.Algorithm.GA and fitness_combination == utils.FitnessCombination.EXEC_DIV:
+                trial.values = [exec_time, 0]
+            else:
+                trial.values = [exec_time]
+
         return elite_population
 
 
