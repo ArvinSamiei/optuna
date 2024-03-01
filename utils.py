@@ -124,13 +124,6 @@ def get_num_objectives():
         return 3
 
 
-algorithm = Algorithm.GA
-fitness_combination = FitnessCombination.EXEC_DIV
-population_size = 100
-n_trials = 100000
-GA_rand_ratio = 0.2
-
-
 class SingletonMeta(type):
     """
     The Singleton class can be implemented in different ways in Python. Some
@@ -201,3 +194,10 @@ def calc_diversity(population, trial_id):
 
 def scale_motions(lst):
     return [x * 30 for x in lst[:6]] + lst[6:]
+
+
+algorithm = Algorithm.GA
+fitness_combination = FitnessCombination.EXEC
+population_size = 100
+n_trials = 100000
+GA_rand_ratio = 0.2
