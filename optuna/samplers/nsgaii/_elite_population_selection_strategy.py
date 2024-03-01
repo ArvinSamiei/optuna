@@ -45,6 +45,7 @@ class NSGAIIElitePopulationSelectionStrategy:
             A list of trials that are selected as elite population.
         """
         _validate_constraints(population, self._constraints_func)
+        self.population_store.add_points_of_population(population)
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
 
@@ -67,7 +68,7 @@ class NSGAIIElitePopulationSelectionStrategy:
             self.population_store.set_max_div(max_div)
         self.population_store.set_population(elite_population)
 
-        self.population_store.add_points_of_population(population)
+
 
         # add random trials
         random_size = self._population_size - selection_size
