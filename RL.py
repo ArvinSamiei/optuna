@@ -1,10 +1,11 @@
 import ctypes as ct
+from enum import Enum
 
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
 from gym import spaces
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, A2C
 
 from utils import run_iter_func
 
@@ -17,6 +18,30 @@ movements = [[step_size, 0, 0],
              [step_size, 0, step_size],
              [step_size, step_size, 0],
              [step_size, step_size, step_size]]
+
+
+class RL_Algorithm(Enum):
+    A2C = 1,
+    PPO = 2
+
+
+algorithm = RL_Algorithm.A2C
+
+class AlgorithmClass:
+    def __init__(self, alg):
+        self.env = gym.make('CollisionAvoidanceEnv-v0')
+        if alg == RL_Algorithm.A2C:
+            try:
+                self.model = PPO.load("ppo_cartpole")
+                print("Saved model doesn't exist. Creating new model.")
+            except FileNotFoundError:
+                self.model = PPO("MlpPolicy", self.env, verbose=1)
+        elif alg == RL_Algorithm.PPO:
+            try:
+                self.model = A2C.load("a2c_cartpole")
+                print("Saved model doesn't exist. Creating new model.")
+            except FileNotFoundError:
+                self.model = A2C("MlpPolicy", self.env, verbose=1)
 
 
 class Function:
@@ -167,14 +192,10 @@ register(
     entry_point='RL:CollisionAvoidanceEnv',
 )
 
-env = gym.make('CollisionAvoidanceEnv-v0')
+rl_alg = AlgorithmClass(algorithm)
 
-# Initialize the agent
-try:
-    model = PPO.load("ppo_cartpole")
-    print("Saved model doesn't exist. Creating new model.")
-except FileNotFoundError:
-    model = PPO("MlpPolicy", env, verbose=1)
+model = rl_alg.model
+env = rl_alg.model
 
 # Train the agent
 total_timesteps = 250000
