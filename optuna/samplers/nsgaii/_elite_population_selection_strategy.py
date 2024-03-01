@@ -20,10 +20,10 @@ from utils import fitness_combination
 
 class NSGAIIElitePopulationSelectionStrategy:
     def __init__(
-        self,
-        *,
-        population_size: int,
-        constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+            self,
+            *,
+            population_size: int,
+            constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
     ) -> None:
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
@@ -52,14 +52,21 @@ class NSGAIIElitePopulationSelectionStrategy:
         selection_size = int(self._population_size * (1 - utils.GA_rand_ratio))
 
         elite_population: list[FrozenTrial] = []
+        limit_size_reached = False
+        removed_trials_nums = []
         for individuals in population_per_rank:
+            if limit_size_reached:
+                removed_trials_nums.extend([t.number for t in individuals])
+                continue
             if len(elite_population) + len(individuals) < selection_size:
                 elite_population.extend(individuals)
             else:
                 n = selection_size - len(elite_population)
                 _crowding_distance_sort(individuals)
                 elite_population.extend(individuals[:n])
-                break
+                limit_size_reached = True
+                removed_trials_nums = [t.number for t in individuals[n:]]
+
 
         max_exec = max(t.values[0] for t in study.best_trials)
         self.population_store.set_max_exec(max_exec)
@@ -68,13 +75,12 @@ class NSGAIIElitePopulationSelectionStrategy:
             self.population_store.set_max_div(max_div)
         self.population_store.set_population(elite_population)
 
-
-
         # add random trials
         random_size = self._population_size - selection_size
         new_trials = []
         for i in range(random_size):
             trial = copy.deepcopy(elite_population[0])
+            trial.number = removed_trials_nums[i]
 
             inputs = {}
             key = 'inputs'
