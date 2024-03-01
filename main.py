@@ -10,7 +10,6 @@ from optuna.samplers import NSGAIISampler
 from pure_random import random_search
 from utils import algorithm, Algorithm, Function, population_size, n_trials, get_num_objectives
 
-population_store = []
 
 if __name__ == "__main__":
     directory = ''
@@ -68,3 +67,28 @@ if __name__ == "__main__":
                 plt.savefig(f'{directory}/div_plot{i}.pdf')
                 plt.clf()
                 utils.PopulationStore().max_div = []
+
+            points_set = utils.PopulationStore().points_covered_set
+
+            z = []
+            counter = 0
+            for points in points_set:
+                for p in points:
+                    x.append(p[0])
+                    y.append(p[1])
+                    z.append(p[2])
+
+                fig = plt.figure()
+                ax = plt.axes(projection='3d')
+                ax.grid()
+
+                ax.scatter(x, y, z, c='r')
+                ax.set_title(f'3D Scatter Plot for set {counter}')
+
+                # Set axes label
+                ax.set_xlabel('x')
+                ax.set_ylabel('y')
+                ax.set_zlabel('z')
+
+            counter += 1
+            plt.show()

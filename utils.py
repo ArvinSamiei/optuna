@@ -130,6 +130,7 @@ population_size = 100
 n_trials = 10000
 GA_rand_ratio = 0.2
 
+
 class SingletonMeta(type):
     """
     The Singleton class can be implemented in different ways in Python. Some
@@ -151,10 +152,13 @@ class SingletonMeta(type):
 
 
 class PopulationStore(metaclass=SingletonMeta):
-    def __init__(self):
+    def __init__(self, no_sets=0):
         self.population = []
         self.max_exec = []
         self.max_div = []
+        if no_sets > 0:
+            self.points_covered_set = [[] for _ in range(no_sets)]
+
     def set_population(self, population):
         if len(population) > 0:
             self.population = population.copy()
@@ -167,6 +171,13 @@ class PopulationStore(metaclass=SingletonMeta):
 
     def get_population(self):
         return self.population
+
+    def add_points_of_population(self, population):
+        for trial in population:
+            inputs = list[trial.params.values()]
+            self.points_covered_set[0].append([inputs[:3]])
+            self.points_covered_set[1].append([inputs[3:6]])
+            self.points_covered_set[2].append([inputs[6:9]])
 
 
 def calc_diversity(population, trial_id):

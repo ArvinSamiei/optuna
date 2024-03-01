@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import itertools
 from collections import defaultdict
 from collections.abc import Callable
@@ -29,6 +30,7 @@ class NSGAIIElitePopulationSelectionStrategy:
 
         self._population_size = population_size
         self._constraints_func = constraints_func
+        self.population_store = utils.PopulationStore(3)
 
     def __call__(self, study: Study, population: list[FrozenTrial]) -> list[FrozenTrial]:
         """Select elite population from the given trials by NSGA-II algorithm.
@@ -46,32 +48,32 @@ class NSGAIIElitePopulationSelectionStrategy:
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
 
+        selection_size = int(self._population_size * (1 - utils.GA_rand_ratio))
+
         elite_population: list[FrozenTrial] = []
         for individuals in population_per_rank:
-            if len(elite_population) + len(individuals) < self._population_size:
+            if len(elite_population) + len(individuals) < selection_size:
                 elite_population.extend(individuals)
             else:
-                n = self._population_size - len(elite_population)
+                n = selection_size - len(elite_population)
                 _crowding_distance_sort(individuals)
                 elite_population.extend(individuals[:n])
                 break
 
-
         max_exec = max(t.values[0] for t in study.best_trials)
-        utils.PopulationStore().set_max_exec(max_exec)
+        self.population_store.set_max_exec(max_exec)
         if utils.algorithm == utils.Algorithm.GA and fitness_combination == utils.FitnessCombination.EXEC_DIV:
             max_div = max(t.values[1] for t in study.best_trials)
-            utils.PopulationStore().set_max_div(max_div)
-        utils.PopulationStore().set_population(elite_population)
+            self.population_store.set_max_div(max_div)
+        self.population_store.set_population(elite_population)
+
+        self.population_store.add_points_of_population(population)
 
         # add random trials
-        selection_size = int(self._population_size * (1 - utils.GA_rand_ratio))
         random_size = self._population_size - selection_size
-        random_indices = random.sample(range(len(elite_population)), random_size)
-
+        new_trials = []
         for i in range(random_size):
-            index = random_indices[i]
-            trial = elite_population[index]
+            trial = copy.deepcopy(elite_population[0])
 
             inputs = {}
             key = 'inputs'
@@ -88,6 +90,10 @@ class NSGAIIElitePopulationSelectionStrategy:
                 trial.values = [exec_time, 0]
             else:
                 trial.values = [exec_time]
+            elite_population.append(trial)
+            new_trials.append(trial)
+
+        self.population_store.add_points_of_population(new_trials)
 
         return elite_population
 
@@ -147,9 +153,9 @@ def _crowding_distance_sort(population: list[FrozenTrial]) -> None:
 
 
 def _fast_non_dominated_sort(
-    population: list[FrozenTrial],
-    directions: list[optuna.study.StudyDirection],
-    dominates: Callable[[FrozenTrial, FrozenTrial, list[optuna.study.StudyDirection]], bool],
+        population: list[FrozenTrial],
+        directions: list[optuna.study.StudyDirection],
+        dominates: Callable[[FrozenTrial, FrozenTrial, list[optuna.study.StudyDirection]], bool],
 ) -> list[list[FrozenTrial]]:
     dominated_count: defaultdict[int, int] = defaultdict(int)
     dominates_list = defaultdict(list)
