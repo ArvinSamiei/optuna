@@ -27,21 +27,31 @@ class RL_Algorithm(Enum):
 
 algorithm = RL_Algorithm.A2C
 
+
 class AlgorithmClass:
     def __init__(self, alg):
+        self.model_file_name = ''
+        self.alg_class = None
         self.env = gym.make('CollisionAvoidanceEnv-v0')
-        if alg == RL_Algorithm.A2C:
-            try:
-                self.model = PPO.load("ppo_cartpole")
-                print("Saved model doesn't exist. Creating new model.")
-            except FileNotFoundError:
-                self.model = PPO("MlpPolicy", self.env, verbose=1)
-        elif alg == RL_Algorithm.PPO:
-            try:
-                self.model = A2C.load("a2c_cartpole")
-                print("Saved model doesn't exist. Creating new model.")
-            except FileNotFoundError:
-                self.model = A2C("MlpPolicy", self.env, verbose=1)
+        if alg == RL_Algorithm.PPO:
+            self.model_file_name = "ppo_cartpole"
+            self.alg_class = PPO
+        elif alg == RL_Algorithm.A2C:
+            self.model_file_name = "a2c_cartpole"
+            self.alg_class = A2C
+
+        self.model = None
+        self.load_model()
+
+    def save_model(self):
+        self.model.save(self.model_file_name)
+
+    def load_model(self):
+        try:
+            self.model = self.alg_class.load(self.model_file_name)
+            print("Saved model doesn't exist. Creating new model.")
+        except FileNotFoundError:
+            self.model = self.alg_class("MlpPolicy", self.env, verbose=1)
 
 
 class Function:
@@ -145,7 +155,7 @@ class CollisionAvoidanceEnv(gym.Env):
 
         return self.state, reward, done, {}
 
-    def reset(self):
+    def reset(self, **kwargs):
         # Reset the environment state
         self.moving_averages = []
         self.reset_state()
@@ -202,7 +212,7 @@ total_timesteps = 250000
 model.learn(total_timesteps=total_timesteps)
 
 # Save the model
-model.save("ppo_cartpole")
+rl_alg.save_model()
 
 x = list(range(len(r_history)))
 y = r_history
@@ -212,7 +222,8 @@ plt.savefig("learn_graph.pdf")
 r_history = []
 
 # Load the trained model
-model = PPO.load("ppo_cartpole")
+rl_alg.load_model()
+model = rl_alg.model
 obs = env.reset()
 
 for i in range(100000):
