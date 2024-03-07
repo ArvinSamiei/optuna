@@ -67,7 +67,6 @@ class NSGAIIElitePopulationSelectionStrategy:
                 limit_size_reached = True
                 removed_trials_nums = [t.number for t in individuals[n:]]
 
-
         max_exec = max(t.values[0] for t in study.best_trials)
         self.population_store.set_max_exec(max_exec)
         if utils.algorithm == utils.Algorithm.GA and fitness_combination == utils.FitnessCombination.EXEC_DIV:
@@ -78,6 +77,7 @@ class NSGAIIElitePopulationSelectionStrategy:
         # add random trials
         random_size = self._population_size - selection_size
         new_trials = []
+        total_inputs = []
         for i in range(random_size):
             trial = copy.deepcopy(elite_population[0])
             trial.number = removed_trials_nums[i]
@@ -90,15 +90,21 @@ class NSGAIIElitePopulationSelectionStrategy:
             for j in range(6, 15):
                 rand_num = random.uniform(0, 3)
                 inputs[f'{key}{j}'] = rand_num
-
-            exec_time = utils.run_iter_func(list(inputs.values()))
             trial.params = inputs
+            new_trials.append(trial)
+            total_inputs.append(list(inputs.values()))
+
+
+        exec_times = utils.run_iter_func(total_inputs)
+
+        for i in range(random_size):
+            exec_time = exec_times[i]
+            trial = new_trials[i]
             if utils.algorithm == utils.Algorithm.GA and fitness_combination == utils.FitnessCombination.EXEC_DIV:
                 trial.values = [exec_time, 0]
             else:
                 trial.values = [exec_time]
             elite_population.append(trial)
-            new_trials.append(trial)
 
         self.population_store.add_points_of_population(new_trials)
 

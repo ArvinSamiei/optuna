@@ -160,7 +160,7 @@ def _optimize_sequential(
                 break
 
         try:
-            frozen_trial = _run_trial(study, func, catch)
+            frozen_trials = _run_trial(study, func, catch)
         finally:
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as GitHub Actions).
@@ -171,7 +171,8 @@ def _optimize_sequential(
 
         if callbacks is not None:
             for callback in callbacks:
-                callback(study, frozen_trial)
+                for frozen_trial in frozen_trials:
+                    callback(study, frozen_trial)
 
         if progress_bar is not None:
             elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
@@ -184,20 +185,22 @@ def _run_trial(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
-) -> trial_module.FrozenTrial:
+) -> list[FrozenTrial]:
     if is_heartbeat_enabled(study._storage):
         optuna.storages.fail_stale_trials(study)
 
-    trial = study.ask()
+    trials = [study.ask() for _ in range(50)]
 
     state: Optional[TrialState] = None
     value_or_values: Optional[Union[float, Sequence[float]]] = None
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
 
-    with get_heartbeat_thread(trial._trial_id, study._storage):
+    total_values = []
+
+    with get_heartbeat_thread(trials[0]._trial_id, study._storage):
         try:
-            value_or_values = func(trial)
+            total_values = func(trials)
         except exceptions.TrialPruned as e:
             # TODO(mamu): Handle multi-objective cases.
             state = TrialState.PRUNED
@@ -208,48 +211,53 @@ def _run_trial(
             func_err_fail_exc_info = sys.exc_info()
 
     # `_tell_with_warning` may raise during trial post-processing.
-    try:
-        frozen_trial = _tell_with_warning(
-            study=study,
-            trial=trial,
-            value_or_values=value_or_values,
-            state=state,
-            suppress_warning=True,
-        )
-    except Exception:
-        frozen_trial = study._storage.get_trial(trial._trial_id)
-        raise
-    finally:
-        if frozen_trial.state == TrialState.COMPLETE:
-            study._log_completed_trial(frozen_trial)
-        elif frozen_trial.state == TrialState.PRUNED:
-            _logger.info("Trial {} pruned. {}".format(frozen_trial.number, str(func_err)))
-        elif frozen_trial.state == TrialState.FAIL:
-            if func_err is not None:
-                _log_failed_trial(
-                    frozen_trial,
-                    repr(func_err),
-                    exc_info=func_err_fail_exc_info,
-                    value_or_values=value_or_values,
-                )
-            elif STUDY_TELL_WARNING_KEY in frozen_trial.system_attrs:
-                _log_failed_trial(
-                    frozen_trial,
-                    frozen_trial.system_attrs[STUDY_TELL_WARNING_KEY],
-                    value_or_values=value_or_values,
-                )
+    frozen_trials = []
+    for i in range(len(trials)):
+        value_or_values = total_values[i]
+        try:
+            frozen_trial = _tell_with_warning(
+                study=study,
+                trial=trials[i],
+                value_or_values=value_or_values,
+                state=state,
+                suppress_warning=True,
+            )
+        except Exception:
+            frozen_trial = study._storage.get_trial(trials[i]._trial_id)
+            raise
+        finally:
+            if frozen_trial.state == TrialState.COMPLETE:
+                study._log_completed_trial(frozen_trial)
+            elif frozen_trial.state == TrialState.PRUNED:
+                _logger.info("Trial {} pruned. {}".format(frozen_trial.number, str(func_err)))
+            elif frozen_trial.state == TrialState.FAIL:
+                if func_err is not None:
+                    _log_failed_trial(
+                        frozen_trial,
+                        repr(func_err),
+                        exc_info=func_err_fail_exc_info,
+                        value_or_values=value_or_values,
+                    )
+                elif STUDY_TELL_WARNING_KEY in frozen_trial.system_attrs:
+                    _log_failed_trial(
+                        frozen_trial,
+                        frozen_trial.system_attrs[STUDY_TELL_WARNING_KEY],
+                        value_or_values=value_or_values,
+                    )
+                else:
+                    assert False, "Should not reach."
             else:
                 assert False, "Should not reach."
-        else:
-            assert False, "Should not reach."
 
-    if (
-        frozen_trial.state == TrialState.FAIL
-        and func_err is not None
-        and not isinstance(func_err, catch)
-    ):
-        raise func_err
-    return frozen_trial
+        if (
+            frozen_trial.state == TrialState.FAIL
+            and func_err is not None
+            and not isinstance(func_err, catch)
+        ):
+            raise func_err
+
+        frozen_trials.append(frozen_trial)
+    return frozen_trials
 
 
 def _log_failed_trial(

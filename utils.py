@@ -69,36 +69,50 @@ class Task(object):
         return v0
 
 
-def execute_c_code(inputs, results_q):
-    arr = (ct.c_double * 15)(*inputs)
-    function = Function()
+def execute_c_code(total_inputs, results_q):
+    for inputs in total_inputs:
+        arr = (ct.c_double * 15)(*inputs)
+        function = Function()
+        exec_times = []
+        for i in range(10):
+            exec_time = function.iteration(3, arr)
+            if exec_time <= 0:
+                results_q.put(-1)
+                break
+            exec_times.append(exec_time)
+        if len(exec_times) == 0:
+            continue
+        p75, p25 = np.percentile(exec_times, [75, 25])
+        np_arr_times = np.array(exec_times)
+        np_arr_times = np_arr_times[np_arr_times < p75]
+        np_arr_times = np_arr_times[np_arr_times > p25]
+        results_q.put(np.mean(np_arr_times))
+
+
+def run_iter_func(total_inputs):
+    results = multiprocessing.Queue()
+    p = Process(target=execute_c_code, args=(total_inputs, results))
+    p.start()
+    p.join()
+
     exec_times = []
-    for i in range(10):
-        exec_time = function.iteration(3, arr)
-        if exec_time <= 0:
-            results_q.put(-1)
-            return
-        exec_times.append(exec_time)
-    p75, p25 = np.percentile(exec_times, [75, 25])
-    np_arr_times = np.array(exec_times)
-    np_arr_times = np_arr_times[np_arr_times < p75]
-    np_arr_times = np_arr_times[np_arr_times > p25]
-    results_q.put(np.mean(np_arr_times))
+    while not results.empty():
+        result = results.get()
+        exec_times.append(result)
+    # arr = (ct.c_double * 15)(*inputs)
+    # function = Function()
+    # function.iteration(3, arr)
+    # result = function.iteration(3, arr)
+    return exec_times
 
-
-def run_iter_func(inputs):
+def single_run_iter_func(inputs):
     results = multiprocessing.Queue()
     p = Process(target=execute_c_code, args=(inputs, results))
     p.start()
     p.join()
 
     result = results.get()
-    # arr = (ct.c_double * 15)(*inputs)
-    # function = Function()
-    # function.iteration(3, arr)
-    # result = function.iteration(3, arr)
     return result
-
 
 def return_objectives(v0, v1, v2):
     if fitness_combination == FitnessCombination.EXEC:
