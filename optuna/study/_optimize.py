@@ -19,6 +19,7 @@ from typing import Union
 import warnings
 
 import optuna
+import utils
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
@@ -189,7 +190,7 @@ def _run_trial(
     if is_heartbeat_enabled(study._storage):
         optuna.storages.fail_stale_trials(study)
 
-    trials = [study.ask() for _ in range(50)]
+    trials = [study.ask() for _ in range(utils.population_size)]
 
     state: Optional[TrialState] = None
     value_or_values: Optional[Union[float, Sequence[float]]] = None
