@@ -1,14 +1,6 @@
-import ctypes as ct
 import itertools
-import random
-from collections import defaultdict
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
-
-import numpy as cp
-
-from optuna.study._multi_objective import dominates_facade
-from utils import fitness_combination, population_size, run_iter_func, n_trials, return_objectives, calc_det
+from utils import fitness_combination, population_size, n_trials, return_objectives, calc_det, \
+    single_run_iter_func
 
 counter = 0
 
@@ -141,7 +133,7 @@ def random_search():
             rand_num = random.uniform(0, 3)
             inputs.append(rand_num)
 
-        v0 = run_iter_func(inputs)
+        v0 = single_run_iter_func(inputs)
         v1 = abs(100000 - v0)
         trials.append(Trial(v0, v1, inputs))
         if k != 0 and k % population_size == 0:
