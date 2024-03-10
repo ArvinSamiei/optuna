@@ -205,7 +205,7 @@ register(
 rl_alg = AlgorithmClass(algorithm)
 
 model = rl_alg.model
-env = rl_alg.model
+env = rl_alg.env
 
 # Train the agent
 total_timesteps = 250000
