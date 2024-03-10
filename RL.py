@@ -83,7 +83,7 @@ class CollisionAvoidanceEnv(gym.Env):
         super(CollisionAvoidanceEnv, self).__init__()
         # Define action and observation space
         # Each state consists of 9 real numbers (positions of 3 objects)
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(9,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=3, shape=(9,), dtype=np.float32)
 
         # Each action consists of 48 real numbers (motions for these objects)
         self.action_space = spaces.MultiDiscrete([7, 7])
