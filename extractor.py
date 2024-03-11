@@ -1,10 +1,15 @@
 import ast
 from statistics import mean, stdev
 
+GA_exec_dir_num = 6
+GA_div_exec_dir_num = 5
+rand_dir_num = 2
+num_iterations = 10
+
 
 def NSGA_exec(i):
     exec_times = []
-    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec/4/NSGA_res{i}.txt', 'r') as file:
+    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec/{GA_exec_dir_num}/NSGA_res{i}.txt', 'r') as file:
         lines = file.readlines()
         counter = 1
         for j in range(3, len(lines)):
@@ -29,7 +34,7 @@ def NSGA_exec(i):
 
 
 def extract_rand_exec_times(i):
-    with open(f'/home/arvins/Desktop/results_wo_outliers/random_exec/2/random_res{i}.txt', 'r') as file:
+    with open(f'/home/arvins/Desktop/results_wo_outliers/random_exec/{rand_dir_num}/random_res{i}.txt', 'r') as file:
         lines = file.readlines()
         counter = 1
         rand_exec_times = []
@@ -43,7 +48,8 @@ def extract_rand_exec_times(i):
 def NSGA_exec_div(i):
     exec_times = []
     diversities = []
-    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec_div/3/NSGA_res{i}.txt', 'r') as file:
+    with open(f'/home/arvins/Desktop/results_wo_outliers/GA_exec_div/{GA_div_exec_dir_num}/NSGA_res{i}.txt',
+              'r') as file:
         lines = file.readlines()
         for j in range(0, len(lines)):
             if 'population' in lines[j]:
@@ -75,14 +81,47 @@ def NSGA_exec_div(i):
 
     return exec_times, diversities
 
-#
-# a = []
-# b = []
-# for i in range(0, 10):
-#     values = NSGA_exec_div(i)
-#     a.append(values[0])
-#     b.append(values[1])
-# print(mean(a))
-# print(stdev(a))
-# print(mean(b))
-# print(stdev(b))
+
+latex_code = r'''
+\begin{table}[h]
+\centering
+\caption{Comparative Performance Analysis across Algorithms and Fitness Functions}
+\label{table:comprehensive_analysis}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+\hline
+\rowcolor{gray}
+\multirow{3}{*}{Iteration} & \multicolumn{4}{c|}{\textbf{Rand Alg}} & \multicolumn{4}{c|}{\textbf{Genetic Alg}} \\
+\cline{2-9} 
+\rowcolor{gray}
+\textbf{Iteration} & \multicolumn{2}{c|}{\textbf{Exe (ns)}} & \multicolumn{2}{c|}{\textbf{Exe \& Div (ns)}} & \multicolumn{2}{c|}{\textbf{Exe (ns)}} & \multicolumn{2}{c|}{\textbf{Exe \& Div (ns)}} \\
+\cline{2-9} 
+\rowcolor{gray}
+ & \textbf{Max} & \textbf{Avg} & \textbf{Max} & \textbf{Avg} & \textbf{Max} & \textbf{Avg} & \textbf{Max} & \textbf{Avg} \\
+\hline
+'''
+
+GA_exec_res = []
+GA_div_exec_res = []
+rand_exec_res = []
+rand_div_exec_res = []
+for i in range(num_iterations):
+    GA_exec_res = NSGA_exec(i)
+    GA_div_exec_res = NSGA_exec_div(i)
+    rand_exec_res = extract_rand_exec_times(i)
+    rand_max = max(rand_exec_res) / 1000
+    rand_mean = mean(rand_exec_res) / 1000
+    GA_e_max = max(GA_exec_res) / 1000
+    GA_e_mean = mean(GA_exec_res) / 1000
+    GA_de_max = max(GA_div_exec_res[0]) / 1000
+    GA_de_mean = mean(GA_div_exec_res[0]) / 1000
+    latex_code += f"{i} & {rand_max: .2f} & {rand_mean: .2f} & - & - & {GA_e_max: .2f} & {GA_e_mean: .2f} & {GA_de_max: .2f} & {GA_de_mean: .2f} \\\\\n"
+
+latex_code += r'''
+\hline
+\multicolumn{9}{|l|}{\cellcolor{gray}\textbf{Note:} Exe = Execution Time, Div = Diversity} \\
+\hline
+\end{tabular}
+\end{table}
+'''
+
+print(latex_code)
