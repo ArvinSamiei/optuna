@@ -153,7 +153,7 @@ def _optimize_sequential(
         if n_trials is not None:
             if i_trial >= n_trials:
                 break
-            i_trial += 1
+            i_trial += utils.population_size
 
         if timeout is not None:
             elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
