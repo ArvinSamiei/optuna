@@ -4,11 +4,10 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 import utils
-from GA2 import get_objective, DOF6, InitCase
 from optuna import create_study
 from optuna.samplers import NSGAIISampler
 from pure_random import random_search
-from utils import algorithm, Algorithm, Function, population_size, n_trials, get_num_objectives
+from utils import algorithm, Algorithm, population_size, n_trials, get_num_objectives
 
 if __name__ == "__main__":
     directory = ''
@@ -21,6 +20,8 @@ if __name__ == "__main__":
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+
+
     if algorithm == Algorithm.RANDOM:
         for i in range(10):
             result = random_search()
@@ -32,15 +33,10 @@ if __name__ == "__main__":
                     file.write('\n')
 
     elif algorithm == Algorithm.GA:
-        if utils.case_study == utils.CaseStudy.DOF6:
-            obj_func = DOF6().get_objective()
-        elif utils.case_study == utils.CaseStudy.First:
-            obj_func = InitCase().get_objective()
-
         for i in range(10):
             sampler = NSGAIISampler(population_size=population_size)
             study = create_study(directions=['maximize'] * get_num_objectives(), sampler=sampler)
-            study.optimize(obj_func, n_trials=n_trials)
+            study.optimize(utils.cases_facade.get_objective(), n_trials=n_trials)
             with open(f'{directory}/NSGA_res{i}.txt', 'a') as file:
                 for t in study.best_trials:
                     file.write(str(list(t.params.values())))

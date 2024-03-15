@@ -5,11 +5,9 @@ import itertools
 from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
-import random
 
 import optuna
 import utils
-from GA2 import get_objective
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.study import Study
@@ -82,20 +80,12 @@ class NSGAIIElitePopulationSelectionStrategy:
             trial = copy.deepcopy(elite_population[0])
             trial.number = removed_trials_nums[i]
 
-            inputs = {}
-            key = 'inputs'
-            for j in range(6):
-                rand_num = random.uniform(0, 0.01)
-                inputs[f'{key}{j}'] = rand_num
-            for j in range(6, 15):
-                rand_num = random.uniform(0, 3)
-                inputs[f'{key}{j}'] = rand_num
+            inputs = utils.cases_facade.create_random_nums()
             trial.params = inputs
             new_trials.append(trial)
             total_inputs.append(list(inputs.values()))
 
-
-        exec_times = utils.run_iter_func(total_inputs)
+        exec_times = utils.cases_facade.run_iter_func(total_inputs)
 
         for i in range(random_size):
             exec_time = exec_times[i]
