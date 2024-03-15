@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
 
+import case_studies
 import optuna
 import utils
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
@@ -80,12 +81,12 @@ class NSGAIIElitePopulationSelectionStrategy:
             trial = copy.deepcopy(elite_population[0])
             trial.number = removed_trials_nums[i]
 
-            inputs = utils.cases_facade.create_random_nums()
+            inputs = case_studies.cases_facade.create_random_nums()
             trial.params = inputs
             new_trials.append(trial)
             total_inputs.append(list(inputs.values()))
 
-        exec_times = utils.cases_facade.run_iter_func(total_inputs)
+        exec_times = case_studies.cases_facade.run_iter_func(total_inputs)
 
         for i in range(random_size):
             exec_time = exec_times[i]

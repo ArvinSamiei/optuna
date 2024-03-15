@@ -173,3 +173,6 @@ class DOF6:
             rand_num = random.uniform(0, 0.01)
             inputs[f'{key}{j}'] = rand_num
         return inputs
+
+
+cases_facade = CasesFacade()

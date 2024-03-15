@@ -4,8 +4,6 @@ import numpy as np
 from enum import Enum
 from multiprocessing import Process
 
-from case_studies import CasesFacade
-
 
 class Function:
     def __init__(self):
@@ -225,5 +223,3 @@ population_size = 100
 n_trials = 100000
 GA_rand_ratio = 0.2
 case_study = CaseStudy.DOF6
-
-cases_facade = CasesFacade()
