@@ -35,6 +35,11 @@ class Algorithm(Enum):
     GA = 2
 
 
+class CaseStudy(Enum):
+    First = 1,
+    DOF6 = 2
+
+
 def calc_det(matrix):
     transpose = matrix.T
     product = np.dot(transpose, matrix)
@@ -105,6 +110,7 @@ def run_iter_func(total_inputs):
     # result = function.iteration(3, arr)
     return exec_times
 
+
 def single_run_iter_func(inputs):
     results = multiprocessing.Queue()
     p = Process(target=execute_c_code, args=(inputs, results))
@@ -113,6 +119,7 @@ def single_run_iter_func(inputs):
 
     result = results.get()
     return result
+
 
 def return_objectives(v0, v1, v2):
     if fitness_combination == FitnessCombination.EXEC:
@@ -211,7 +218,8 @@ def scale_motions(lst):
 
 
 algorithm = Algorithm.GA
-fitness_combination = FitnessCombination.EXEC
+fitness_combination = FitnessCombination.EXEC_DIV
 population_size = 100
 n_trials = 100000
 GA_rand_ratio = 0.2
+case_study = CaseStudy.DOF6
