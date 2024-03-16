@@ -120,8 +120,9 @@ class DOF6:
 
         # Define arguments of the C function
         self.iteration.argtypes = [
-            ct.c_int32,
-            ct.POINTER(ct.c_double)
+            ct.POINTER(ct.c_double),
+            ct.POINTER(ct.c_double),
+            ct.c_bool
         ]
 
     def get_objective(self, run_iter_func):
@@ -151,9 +152,10 @@ class DOF6:
     def execute_c_code(self, total_inputs, results_q):
         for inputs in total_inputs:
             arr = (ct.c_double * 6)(*inputs)
+            arr2 = (ct.c_double * 6)(*inputs)
             exec_times = []
             for i in range(50):
-                exec_time = self.iteration(3, arr)
+                exec_time = self.iteration(arr, arr2, ct.c_bool(False))
                 if exec_time <= 0:
                     results_q.put(-1)
                     break
@@ -168,7 +170,7 @@ class DOF6:
 
     def create_random_nums(self):
         inputs = {}
-        key = 'inputs'
+        key = 'degree'
         for j in range(6):
             rand_num = random.uniform(0, 0.01)
             inputs[f'{key}{j}'] = rand_num
