@@ -35,6 +35,15 @@ class CasesFacade:
     def create_random_nums(self):
         return self.case.create_random_nums()
 
+    def add_points_of_population(self, population):
+        self.case.add_points_of_population(population)
+
+    def get_points(self):
+        return self.case.points_covered_set
+
+    def reset(self):
+        self.case.points_covered_set = [[] for _ in range(self.case.no_sets)]
+
 
 class InitCase:
     def __init__(self):
@@ -50,6 +59,8 @@ class InitCase:
             ct.c_int32,
             ct.POINTER(ct.c_double)
         ]
+        self.no_sets = 3
+        self.points_covered_set = [[] for _ in range(self.no_sets)]
 
     def get_objective(self, run_iter_func):
         def objective(trials):
@@ -77,6 +88,13 @@ class InitCase:
             return total_objectives
 
         return objective
+
+    def add_points_of_population(self, population):
+        for trial in population:
+            inputs = list(trial.params.values())
+            self.points_covered_set[0].append(inputs[6:9])
+            self.points_covered_set[1].append(inputs[9:12])
+            self.points_covered_set[2].append(inputs[12:15])
 
     def execute_c_code(self, total_inputs, results_q):
         for inputs in total_inputs:
@@ -124,6 +142,9 @@ class DOF6:
             ct.POINTER(ct.c_double),
             ct.c_bool
         ]
+
+        self.no_sets = 2
+        self.points_covered_set = [[] for _ in range(self.no_sets)]
 
     def get_objective(self, run_iter_func):
         def objective(trials):
@@ -175,6 +196,12 @@ class DOF6:
             rand_num = random.uniform(0, 0.01)
             inputs[f'{key}{j}'] = rand_num
         return inputs
+
+    def add_points_of_population(self, population):
+        for trial in population:
+            inputs = list(trial.params.values())
+            self.points_covered_set[0].append(inputs[:3])
+            self.points_covered_set[1].append(inputs[3:])
 
 
 cases_facade = CasesFacade()

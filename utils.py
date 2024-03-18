@@ -1,8 +1,9 @@
 import ctypes as ct
 import multiprocessing
-import numpy as np
 from enum import Enum
 from multiprocessing import Process
+
+import numpy as np
 
 
 class Function:
@@ -170,9 +171,6 @@ class PopulationStore(metaclass=SingletonMeta):
         self.population = []
         self.max_exec = []
         self.max_div = []
-        self.no_sets = no_sets
-        if no_sets > 0:
-            self.points_covered_set = [[] for _ in range(no_sets)]
 
     def set_population(self, population):
         if len(population) > 0:
@@ -187,19 +185,10 @@ class PopulationStore(metaclass=SingletonMeta):
     def get_population(self):
         return self.population
 
-    def add_points_of_population(self, population):
-        for trial in population:
-            inputs = list(trial.params.values())
-            self.points_covered_set[0].append(inputs[6:9])
-            self.points_covered_set[1].append(inputs[9:12])
-            self.points_covered_set[2].append(inputs[12:15])
-
     def reset(self):
         self.population = []
         self.max_exec = []
         self.max_div = []
-        if self.no_sets > 0:
-            self.points_covered_set = [[] for _ in range(self.no_sets)]
 
 
 def calc_diversity(population, trial_id):

@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 plt.clf()
                 plt.close()
 
-            points_set = utils.PopulationStore().points_covered_set
+            points_set = case_studies.cases_facade.get_points()
 
             set_no = 0
             for points in points_set:
@@ -97,3 +97,4 @@ if __name__ == "__main__":
 
                 set_no += 1
             utils.PopulationStore().reset()
+            case_studies.cases_facade.reset()

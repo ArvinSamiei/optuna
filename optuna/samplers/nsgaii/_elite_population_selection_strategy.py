@@ -44,7 +44,7 @@ class NSGAIIElitePopulationSelectionStrategy:
             A list of trials that are selected as elite population.
         """
         _validate_constraints(population, self._constraints_func)
-        self.population_store.add_points_of_population(population)
+        case_studies.cases_facade.add_points_of_population(population)
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
 
@@ -97,7 +97,7 @@ class NSGAIIElitePopulationSelectionStrategy:
                 trial.values = [exec_time]
             elite_population.append(trial)
 
-        self.population_store.add_points_of_population(new_trials)
+        case_studies.cases_facade.add_points_of_population(new_trials)
 
         return elite_population
 
