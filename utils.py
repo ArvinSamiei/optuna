@@ -4,6 +4,9 @@ from enum import Enum
 from multiprocessing import Process
 
 import numpy as np
+from scipy.stats import qmc
+
+import utils
 
 
 class Function:
@@ -192,14 +195,27 @@ class PopulationStore(metaclass=SingletonMeta):
 
 
 def calc_diversity(population, trial_id):
-    matrix = np.array([scale_motions(list(obj.params.values())) for obj in population], dtype=np.float32)
+    if utils.diversity_mode == DiversityMode.MATRIX:
+        matrix = np.array([scale_motions(list(obj.params.values())) for obj in population], dtype=np.float32)
 
-    trial_popped = [x for x in population if x._trial_id != trial_id]
-    matrix_wo_trial = np.array([scale_motions(list(obj.params.values())) for obj in trial_popped], dtype=np.float32)
+        trial_popped = [x for x in population if x._trial_id != trial_id]
+        matrix_wo_trial = np.array([scale_motions(list(obj.params.values())) for obj in trial_popped], dtype=np.float32)
 
-    det = calc_det(matrix)
-    det_wo_trial = calc_det(matrix_wo_trial)
-    return abs(det) - abs(det_wo_trial)
+        det = calc_det(matrix)
+        det_wo_trial = calc_det(matrix_wo_trial)
+        return abs(det) - abs(det_wo_trial)
+    elif utils.diversity_mode == DiversityMode.DISCREPANCY:
+        all = []
+        all_wo_trial = []
+        for obj in population:
+            all.append(obj.params.values())
+            if obj.tiral_id != trial_id:
+                all_wo_trial.append(obj.params.values())
+
+        discrepancy_all = qmc.discrepancy(np.array(all), iterative=True)
+        discrepancy_wo_trial = qmc.discrepancy(np.array(all_wo_trial), iterative=True)
+
+        return discrepancy_all - discrepancy_wo_trial
 
 
 def scale_motions(lst):
@@ -212,3 +228,11 @@ population_size = 100
 n_trials = 100000
 GA_rand_ratio = 0.2
 case_study = CaseStudy.DOF6
+
+
+class DiversityMode(Enum):
+    DISCREPANCY = 1,
+    MATRIX = 2
+
+
+diversity_mode = DiversityMode.DISCREPANCY

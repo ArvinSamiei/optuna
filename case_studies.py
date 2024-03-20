@@ -204,4 +204,5 @@ class DOF6:
             self.points_covered_set[1].append(inputs[3:])
 
 
+
 cases_facade = CasesFacade()
