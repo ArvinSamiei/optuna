@@ -215,7 +215,7 @@ def calc_diversity(population, trial_id):
         discrepancy_all = qmc.discrepancy(np.array(all), iterative=True)
         discrepancy_wo_trial = qmc.discrepancy(np.array(all_wo_trial), iterative=True)
 
-        return discrepancy_all - discrepancy_wo_trial
+        return discrepancy_wo_trial - discrepancy_all
 
 
 def scale_motions(lst):

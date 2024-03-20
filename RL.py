@@ -10,6 +10,7 @@ from stable_baselines3 import PPO, A2C
 import utils
 from case_studies import CasesFacade
 from utils import run_iter_func
+from scipy.stats import qmc
 
 step_size = 0.001
 
@@ -214,6 +215,8 @@ class CollisionAvoidanceEnv_6DOF(gym.Env):
         # Each action consists of 48 real numbers (motions for these objects)
         self.action_space = spaces.Discrete(64)
 
+        self.points = []
+
         self.cases_facade = CasesFacade()
         self.function = self.cases_facade.run_iter_func
 
@@ -299,6 +302,7 @@ class CollisionAvoidanceEnv_6DOF(gym.Env):
     def reset(self, **kwargs):
         # Reset the environment state
         self.moving_averages = []
+        self.points = []
         self.reset_state()
         return self.state
 
@@ -315,7 +319,15 @@ class CollisionAvoidanceEnv_6DOF(gym.Env):
         # In your case, it's related to execution time for collision checking
 
         execution_time = self.function([inputs])[0]
-        return execution_time / 30000000
+        scaled_exec = execution_time / 30000000
+        if len(self.points) == 0:
+            discrepancy_wo_trial = 0
+        else:
+            discrepancy_wo_trial = qmc.discrepancy(np.array(self.points), iterative=True)
+        self.points.append(inputs)
+        discrepancy_all = qmc.discrepancy(np.array(self.points), iterative=True)
+        diversity = discrepancy_wo_trial - discrepancy_all
+        return diversity * 0.2 + scaled_exec * 0.8
 
     def reset_state(self):
         count = 0
