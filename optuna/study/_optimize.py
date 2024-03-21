@@ -200,16 +200,8 @@ def _run_trial(
     total_values = []
 
     with get_heartbeat_thread(trials[0]._trial_id, study._storage):
-        try:
-            total_values = func(trials)
-        except exceptions.TrialPruned as e:
-            # TODO(mamu): Handle multi-objective cases.
-            state = TrialState.PRUNED
-            func_err = e
-        except (Exception, KeyboardInterrupt) as e:
-            state = TrialState.FAIL
-            func_err = e
-            func_err_fail_exc_info = sys.exc_info()
+
+        total_values = func(trials)
 
     # `_tell_with_warning` may raise during trial post-processing.
     frozen_trials = []

@@ -208,9 +208,9 @@ def calc_diversity(population, trial_id):
         all = []
         all_wo_trial = []
         for obj in population:
-            all.append(obj.params.values())
+            all.append(list(obj.params.values()))
             if obj._trial_id != trial_id:
-                all_wo_trial.append(obj.params.values())
+                all_wo_trial.append(list(obj.params.values()))
 
         discrepancy_all = qmc.discrepancy(np.array(all), iterative=True)
         discrepancy_wo_trial = qmc.discrepancy(np.array(all_wo_trial), iterative=True)
