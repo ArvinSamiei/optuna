@@ -145,6 +145,12 @@ class DOF6:
 
         self.no_sets = 2
         self.points_covered_set = [[] for _ in range(self.no_sets)]
+        self.limits = [[-2.9671, 2.9671],
+                       [-1.7453, 2.3562],
+                       [-2.0769, 2.8972],
+                       [-3.3161, 3.3161],
+                       [-2.0944, 2.0944],
+                       [-6.2832, 6.2832]]
 
     def get_objective(self, run_iter_func):
         def objective(trials):
@@ -152,7 +158,7 @@ class DOF6:
             for trial in trials:
                 inputs = []
                 for i in range(6):
-                    sug_f = trial.suggest_float(f"degree{i}", 0, 0.01)
+                    sug_f = trial.suggest_float(f"degree{i}", self.limits[i][0], self.limits[i][1])
                     inputs.append(sug_f)
 
                 total_inputs.append(inputs)
@@ -202,7 +208,6 @@ class DOF6:
             inputs = list(trial.params.values())
             self.points_covered_set[0].append(inputs[:3])
             self.points_covered_set[1].append(inputs[3:])
-
 
 
 cases_facade = CasesFacade()
