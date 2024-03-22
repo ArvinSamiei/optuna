@@ -194,6 +194,23 @@ class PopulationStore(metaclass=SingletonMeta):
         self.max_div = []
 
 
+limits = [[-2.9671, 2.9671],
+          [-1.7453, 2.3562],
+          [-2.0769, 2.8972],
+          [-3.3161, 3.3161],
+          [-2.0944, 2.0944],
+          [-6.2832, 6.2832]]
+
+
+def scale_to_01(p):
+    global limits
+    scaled_p = [0] * 6
+    for i in range(len(p)):
+        scaled_p[i] = (p[i] - limits[i][0]) / (limits[i][1] - limits[i][0])
+
+    return scaled_p
+
+
 def calc_diversity(population, trial_id):
     if utils.diversity_mode == DiversityMode.MATRIX:
         matrix = np.array([scale_motions(list(obj.params.values())) for obj in population], dtype=np.float32)
@@ -208,9 +225,9 @@ def calc_diversity(population, trial_id):
         all = []
         all_wo_trial = []
         for obj in population:
-            all.append(list(obj.params.values()))
+            all.append(scale_to_01(list(obj.params.values())))
             if obj._trial_id != trial_id:
-                all_wo_trial.append(list(obj.params.values()))
+                all_wo_trial.append(scale_to_01(list(obj.params.values())))
 
         discrepancy_all = qmc.discrepancy(np.array(all), iterative=True)
         discrepancy_wo_trial = qmc.discrepancy(np.array(all_wo_trial), iterative=True)

@@ -181,11 +181,10 @@ class DOF6:
             arr = (ct.c_double * 6)(*inputs)
             arr2 = (ct.c_double * 6)(*inputs)
             exec_times = []
-            for i in range(50):
+            for i in range(10):
                 exec_time = self.iteration(arr, arr2, ct.c_bool(False))
-                # if exec_time <= 0:
-                #     results_q.put(-1)
-                #     break
+                if exec_time <= 0:
+                    exec_time *= -1
                 exec_times.append(exec_time)
             if len(exec_times) == 0:
                 continue
