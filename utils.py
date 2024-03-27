@@ -204,7 +204,10 @@ limits = [[-2.9671, 2.9671],
 
 def scale_to_01(p):
     global limits
-    scaled_p = [0] * 6
+    if case_study == CaseStudy.First:
+        res = [x * 30 for x in p[:6]] + p[6:]
+        return [x / 3 for x in res]
+    scaled_p = [0] * len(p)
     for i in range(len(p)):
         scaled_p[i] = (p[i] - limits[i][0]) / (limits[i][1] - limits[i][0])
 
