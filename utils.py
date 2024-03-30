@@ -41,7 +41,8 @@ class Algorithm(Enum):
 
 class CaseStudy(Enum):
     First = 1,
-    DOF6 = 2
+    DOF6 = 2,
+    Test = 3
 
 
 def calc_det(matrix):
@@ -247,7 +248,7 @@ fitness_combination = FitnessCombination.EXEC_DIV
 population_size = 100
 n_trials = 100000
 GA_rand_ratio = 0.2
-case_study = CaseStudy.DOF6
+case_study = CaseStudy.Test
 
 
 class DiversityMode(Enum):

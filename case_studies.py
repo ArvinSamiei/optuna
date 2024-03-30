@@ -15,6 +15,8 @@ class CasesFacade:
             self.case = InitCase()
         elif utils.case_study == utils.CaseStudy.DOF6:
             self.case = DOF6()
+        elif utils.case_study == utils.CaseStudy.Test:
+            self.case = TestCase()
         self.execute_c_code = self.case.execute_c_code
 
     def get_objective(self):
@@ -199,6 +201,78 @@ class DOF6:
         key = 'degree'
         for j in range(6):
             rand_num = random.uniform(0, 0.01)
+            inputs[f'{key}{j}'] = rand_num
+        return inputs
+
+    def add_points_of_population(self, population):
+        for trial in population:
+            inputs = list(trial.params.values())
+            self.points_covered_set[0].append(inputs[:3])
+            self.points_covered_set[1].append(inputs[3:])
+
+class TestCase:
+    def __init__(self):
+        mylib = ct.CDLL(
+            './libTestProj.so')
+
+        self.iteration = mylib.test_func
+        # Define the return type of the C function
+        self.iteration.restype = ct.c_long
+
+        # Define arguments of the C function
+        self.iteration.argtypes = [
+            ct.POINTER(ct.c_double)
+        ]
+
+        self.no_sets = 2
+        self.points_covered_set = [[] for _ in range(self.no_sets)]
+
+    def get_objective(self, run_iter_func):
+        def objective(trials):
+            total_inputs = []
+            for trial in trials:
+                inputs = []
+                for i in range(6):
+                    sug_f = trial.suggest_float(f"inp{i}", 0, 1)
+                    inputs.append(sug_f)
+
+                total_inputs.append(inputs)
+
+            execution_times = run_iter_func(total_inputs)
+
+            total_objectives = []
+            for exec_time in execution_times:
+                v0 = exec_time
+                v1 = abs(100000 - v0)
+                v2 = 0
+                total_objectives.append(return_objectives(v0, v1, v2))
+
+            return total_objectives
+
+        return objective
+
+    def execute_c_code(self, total_inputs, results_q):
+        for inputs in total_inputs:
+            arr = (ct.c_double * 6)(*inputs)
+            exec_times = []
+            for i in range(10):
+                exec_time = self.iteration(arr)
+                if exec_time <= 0:
+                    exec_time *= -1
+                exec_times.append(exec_time)
+            if len(exec_times) == 0:
+                continue
+            p75, p25 = np.percentile(exec_times, [75, 25])
+            np_arr_times = np.array(exec_times)
+            # np_arr_times = np_arr_times[np_arr_times < p75]
+            # np_arr_times = np_arr_times[np_arr_times > p25]
+            results_q.put(np.mean(np_arr_times))
+
+    def create_random_nums(self):
+        inputs = {}
+        key = 'inp'
+        for j in range(6):
+            rand_num = random.uniform(0, 1)
             inputs[f'{key}{j}'] = rand_num
         return inputs
 
