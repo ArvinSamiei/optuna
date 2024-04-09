@@ -323,15 +323,15 @@ class CollisionAvoidanceEnv_6DOF(gym.Env):
 
         execution_time = self.function([inputs])[0]
         scaled_exec = execution_time / 30000000
-        if len(self.points) == 0:
-            discrepancy_wo_trial = 0
-        else:
-            discrepancy_wo_trial = qmc.discrepancy(np.array(self.points), iterative=True)
-        self.points.append(inputs)
-        discrepancy_all = qmc.discrepancy(np.array(self.points), iterative=True)
-        diversity = discrepancy_wo_trial - discrepancy_all
-        return diversity * 0.2 + scaled_exec * 0.8
-
+        # if len(self.points) == 0:
+        #     discrepancy_wo_trial = 0
+        # else:
+        #     discrepancy_wo_trial = qmc.discrepancy(np.array(self.points), iterative=True)
+        # self.points.append(inputs)
+        # discrepancy_all = qmc.discrepancy(np.array(self.points), iterative=True)
+        # diversity = discrepancy_wo_trial - discrepancy_all
+        # return diversity * 0.2 + scaled_exec * 0.8
+        return scaled_exec
     def reset_state(self):
         count = 0
         while True:
@@ -361,7 +361,7 @@ model = rl_alg.model
 env = rl_alg.env
 
 # Train the agent
-total_timesteps = 250000
+total_timesteps = 25000
 model.learn(total_timesteps=total_timesteps)
 
 # Save the model
@@ -379,7 +379,7 @@ rl_alg.load_model()
 model = rl_alg.model
 obs = env.reset()
 
-for i in range(100000):
+for i in range(10000):
     action, _states = model.predict(obs, deterministic=True)
     obs, rewards, dones, info = env.step(action)
     env.render()
