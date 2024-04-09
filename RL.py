@@ -296,6 +296,9 @@ class CollisionAvoidanceEnv_6DOF(gym.Env):
 
         for i in range(6):
             self.state[i] += inputs[i]
+            if utils.case_study == utils.CaseStudy.DOF6:
+                if self.state[i] > self.cases_facade.case.limits[i][1]:
+                    self.state[i] = self.cases_facade.case.limits[i][0]
 
         return self.state, reward, done, {}
 
